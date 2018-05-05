@@ -407,7 +407,6 @@ function createFenceCommand(spriteTexture, levelCount, closeupDistance, cameraHe
     #define closeupDistance float(${closeupDistance})
     #define cameraHeight float(${cameraHeight})
 
-    uniform float cameraOffset;
     uniform float cameraSideOffset;
     uniform float hFlip;
 
@@ -417,7 +416,7 @@ function createFenceCommand(spriteTexture, levelCount, closeupDistance, cameraHe
 
     void batchItemSetup(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
       xOffset = computeSegmentX(segmentDepth, segmentCurve);
-      depth = segmentOffset + segmentDepth - cameraOffset;
+      depth = segmentOffset + segmentDepth;
       closeupScale = clamp(depth / closeupDistance, 0.0, 1.0);
     }
 
@@ -466,7 +465,6 @@ function createFenceCommand(spriteTexture, levelCount, closeupDistance, cameraHe
     hFlip: regl.prop('hFlip'),
     level: regl.prop('level'),
     sprite: spriteTexture,
-    cameraOffset: regl.prop('cameraOffset'),
     cameraSideOffset: regl.prop('cameraSideOffset')
   } });
 }
@@ -724,7 +722,6 @@ runTimer(STEP, 0, function () {
       fenceCmd({
         hFlip: -1,
         level: level,
-        cameraOffset: 0,
         cameraSideOffset: sideOffset
       }, renderCommand);
     });
@@ -733,7 +730,6 @@ runTimer(STEP, 0, function () {
       fenceCmd({
         hFlip: 1,
         level: level,
-        cameraOffset: 0,
         cameraSideOffset: sideOffset
       }, renderCommand);
     });
@@ -747,7 +743,6 @@ runTimer(STEP, 0, function () {
       buildingCmd({
         hFlip: -1,
         level: level,
-        cameraOffset: 0,
         cameraSideOffset: sideOffset
       }, renderCommand);
     });
@@ -756,7 +751,6 @@ runTimer(STEP, 0, function () {
       buildingCmd({
         hFlip: 1,
         level: level,
-        cameraOffset: 0,
         cameraSideOffset: sideOffset
       }, renderCommand);
     });
