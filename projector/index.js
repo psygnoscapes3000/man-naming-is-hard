@@ -52,6 +52,12 @@ const regl = require('regl')({
   attributes: { antialias: false, alpha: false }
 });
 
+const carTexture = regl.texture({ width: 64, height: 64, min: 'nearest', mag: 'nearest', wrapS: 'repeat', wrapT: 'repeat' });
+const carImageURI = 'data:application/octet-stream;base64,' + btoa(require('fs').readFileSync(__dirname + '/car.png', 'binary'));
+loadImage(carImageURI).then(img => {
+  carTexture({ width: img.width, height: img.height, min: 'nearest', mag: 'nearest', wrapS: 'repeat', wrapT: 'repeat', data: img });
+});
+
 const roadTexture = regl.texture({ width: 64, height: 64, min: 'nearest', mag: 'nearest', wrapS: 'repeat', wrapT: 'repeat' });
 const roadImageURI = 'data:application/octet-stream;base64,' + btoa(require('fs').readFileSync(__dirname + '/road.png', 'binary'));
 loadImage(roadImageURI).then(img => {
@@ -300,6 +306,61 @@ postLightCmd = regl({ context: { batchItem: { vert: glsl`
     );
   }
 ` } } });
+
+carCmd = regl({
+  vert: glsl`
+    precision mediump float;
+
+    uniform mat4 camera;
+    attribute vec2 position;
+
+    varying vec2 facePosition;
+
+    void main() {
+      facePosition = position;
+
+      gl_Position = camera * vec4(
+        position.x * 1.2,
+        10.0,
+        (position.y + 0.72) * 1.2,
+        1.0
+      );
+    }
+  `,
+
+  frag: glsl`
+    precision mediump float;
+
+    uniform sampler2D carTexture;
+
+    varying vec2 facePosition;
+
+    void main() {
+      gl_FragColor = texture2D(carTexture, facePosition * vec2(0.5, -0.5) - vec2(0.5, 0.5));
+
+      if (gl_FragColor.a < 1.0) {
+        discard;
+      }
+    }
+  `,
+
+  attributes: {
+    position: regl.buffer([
+      [ -1, -1 ],
+      [ 1, -1 ],
+      [ 1,  1 ],
+      [ -1, 1 ]
+    ])
+  },
+
+  uniforms: {
+    carTexture: carTexture,
+    camera: regl.prop('camera')
+  },
+
+  primitive: 'triangle fan',
+  count: 4
+});
 
 function createSpriteTexture(sourcePromise, textureW, textureH, textureMultiplierW, textureMultiplierH, levels, surfaceDepth, surfaceXOffset, surfaceHeight) {
   const spriteCanvas = document.createElement('canvas');
@@ -683,7 +744,7 @@ runTimer(STEP, 0, function () {
   mat4.rotateX(camera, camera, -Math.PI / 2);
 
   // camera shake and offset
-  const sideOffset = 2.0 * Math.cos(now * 0.75) + 0.02 * Math.cos(now * 3.17);
+  const sideOffset = 0.1 * Math.cos(now * 0.75) + 0.02 * Math.cos(now * 3.17);
 
   vec3.set(cameraPosition, -sideOffset, 0, -CAMERA_HEIGHT + 0.02 * Math.cos(now * 2.31));
   mat4.translate(camera, camera, cameraPosition);
@@ -691,6 +752,10 @@ runTimer(STEP, 0, function () {
   bgCmd({
     topColor: bgTopColor,
     bottomColor: bgBottomColor,
+  });
+
+  carCmd({
+    camera: camera
   });
 
   segmentRenderer(segmentList, function () {
