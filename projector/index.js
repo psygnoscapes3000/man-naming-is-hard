@@ -52,6 +52,18 @@ const regl = require('regl')({
   attributes: { antialias: false, alpha: false }
 });
 
+const roadTexture = regl.texture({ width: 64, height: 64, min: 'nearest', mag: 'nearest', wrapS: 'repeat', wrapT: 'repeat' });
+const roadImageURI = 'data:application/octet-stream;base64,' + btoa(require('fs').readFileSync(__dirname + '/road.png', 'binary'));
+loadImage(roadImageURI).then(img => {
+  roadTexture({ width: img.width, height: img.height, min: 'nearest', mag: 'nearest', wrapS: 'repeat', wrapT: 'repeat', data: img });
+});
+
+const roadEdgeTexture = regl.texture({ width: 64, height: 64, min: 'nearest', mag: 'nearest', wrapS: 'repeat', wrapT: 'repeat' });
+const roadEdgeImageURI = 'data:application/octet-stream;base64,' + btoa(require('fs').readFileSync(__dirname + '/road-edge.png', 'binary'));
+loadImage(roadEdgeImageURI).then(img => {
+  roadEdgeTexture({ width: img.width, height: img.height, min: 'nearest', mag: 'nearest', wrapS: 'repeat', wrapT: 'repeat', data: img });
+});
+
 roadCmd = regl({
   vert: glsl`
     precision mediump float;
@@ -67,7 +79,7 @@ roadCmd = regl({
     varying vec2 viewPlanePosition;
 
     void main() {
-      float roadHalfWidth = (roadLaneWidth * 3.0 + roadShoulderWidth * 2.0) * 0.5;
+      float roadHalfWidth = (roadLaneWidth * (roadLaneCount + 1.0)) * 0.5 + roadPaddingWidth;
       float roadY = position.y * segmentLength + segmentOffset;
 
       gl_Position = camera * vec4(
@@ -103,23 +115,19 @@ roadCmd = regl({
 
     uniform float segmentOffset;
     uniform vec3 segmentCurve;
-    uniform vec3 roadColor;
-    uniform vec3 roadHighlightColor;
-    uniform vec3 markerColor;
-    uniform vec3 markerHighlightColor;
+    uniform sampler2D roadTexture;
+    uniform sampler2D roadEdgeTexture;
 
     varying vec2 viewPlanePosition;
 
     void main() {
-      float roadHalfWidth = (roadLaneWidth * 3.0 + roadShoulderWidth * 2.0) * 0.5;
+      float roadHalfWidth = (roadLaneWidth * (roadLaneCount + 1.0)) * 0.5 + roadPaddingWidth;
 
       float segmentDepth = viewPlanePosition.y - segmentOffset;
       vec2 segmentPosition = vec2(
         viewPlanePosition.x - computeSegmentX(segmentDepth, segmentCurve),
         viewPlanePosition.y
       );
-
-      float lightDistance = abs((mod(segmentPosition.y - lightOffset, lightSpacing) / lightSpacing) - 0.5) / 0.5;
 
       if (abs(segmentPosition.x) > roadHalfWidth) {
         float fieldFactor = step(25.0, mod(segmentPosition.y, 50.0));
@@ -130,20 +138,17 @@ roadCmd = regl({
       float distToMidLane = abs(roadLaneWidth * 0.5 - abs(segmentPosition.x));
       float distToEdgeLane = abs(roadLaneWidth * 1.5 - abs(segmentPosition.x));
 
-      float notMidLane = 1.0 - (
-        step(distToMidLane, roadMarkerWidth * 0.5) *
-        step(roadLaneMarkerLength, mod(segmentPosition.y, roadLaneMarkerLength * 2.0))
+      float lanePosition = segmentPosition.x / roadLaneWidth + roadLaneCount * 0.5 - 0.5;
+      vec2 texturePosition = vec2(
+        lanePosition,
+        (segmentPosition.y - lightOffset) / lightSpacing - 0.5
       );
-      float notEdgeLane = step(roadMarkerWidth * 0.5, distToEdgeLane);
-      float notMarker = notMidLane * notEdgeLane;
 
-      float quantLightPos = floor(lightDistance * 4.0 + 0.5) / 4.0;
-
-      vec3 color = notMarker < 1.0
-        ? mix(markerColor, markerHighlightColor, quantLightPos)
-        : mix(roadColor, roadHighlightColor, quantLightPos);
-
-      gl_FragColor = vec4(color, 1.0);
+      if (lanePosition >= 0.0 && lanePosition < roadLaneCount - 1.0) {
+        gl_FragColor = texture2D(roadTexture, texturePosition);
+      } else {
+        gl_FragColor = texture2D(roadEdgeTexture, texturePosition);
+      }
     }
   `,
 
@@ -157,10 +162,8 @@ roadCmd = regl({
   },
 
   uniforms: {
-    roadColor: regl.prop('roadColor'),
-    roadHighlightColor: regl.prop('roadHighlightColor'),
-    markerColor: regl.prop('markerColor'),
-    markerHighlightColor: regl.prop('markerHighlightColor'),
+    roadTexture: roadTexture,
+    roadEdgeTexture: roadEdgeTexture,
     cameraSideOffset: regl.prop('cameraSideOffset'),
     camera: regl.prop('camera')
   },
