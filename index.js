@@ -13,7 +13,7 @@ class Player {
   constructor(socket) {
     this.socket = socket;
     this.state = 'NEW';
-    this.nextAction = null;
+    this.action = null;
     this.row = null;
     this.col = null;
   }
@@ -24,6 +24,24 @@ const COLS = 3;
 
 function isOccupied(col, row) {
   return players.some((player) => player.row === row && player.col === col);
+}
+
+function movePlayer(player, cols, rows) {
+  const newCol = player.col + cols;
+  const newRow = player.row + rows;
+
+  if (newCol < 0 || newCol > COLS - 1 || newRow < 0 || newRow > ROWS - 1) {
+    return false;
+  }
+
+  if (isOccupied(newCol, newRow)) {
+    return false;
+  }
+
+  player.col = newCol;
+  player.row = newRow;
+
+  return true;
 }
 
 // Find an empty slot to place the player and return true if found
@@ -61,10 +79,17 @@ io.on('connection', (socket) => {
       socket.on('action', (action) => {
         console.log('action', action);
         socket.emit('action_ack', action);
-        player.nextAction = action;
+        player.action = action;
       });
     } else {
       console.log('projector connected');
+
+      socket.emit('init', {
+        players: players.map((player) => ({
+          ...player,
+          socket: undefined
+        }))
+      });
     }
   });
 });
@@ -76,8 +101,24 @@ function tick() {
 
   const seconds = Math.floor(time / 1000);
 
-  if (seconds % 5 === 0) {
+  const ROUND_SECONDS = 5;
+
+  if (seconds % ROUND_SECONDS === 0) {
     console.log('new turn');
+
+    players.forEach((player) => {
+      if (player.action) {
+        switch (player.action) {
+        case 'left':
+          movePlayer(player, -1, 0);
+          break;
+        case 'right':
+          movePlayer(player, 1, 0);
+          break;
+        }
+      }
+    });
+
     io.emit('turn', {
       players: players.map((player) => ({
         ...player,
@@ -86,7 +127,7 @@ function tick() {
     });
 
     players.forEach((player) => {
-      player.nextAction = null;
+      player.action = null;
       player.state = 'PLAYING';
     });
   }

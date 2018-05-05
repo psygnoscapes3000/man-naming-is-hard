@@ -16,15 +16,20 @@
     socket.emit('identify', { isPlayer: true });
   });
 
-  let serverTime = 0;
+  let serverTimeDelta = null;
+  let targetServerTimeDelta = null;
 
   socket.on('time', (time) => {
-    serverTime = time;
+    targetServerTimeDelta = Date.now() - time;
   });
 
   socket.on('action_ack', (action) => {
     console.log('action ack');
     state.action = action;
+  });
+
+  socket.on('turn', () => {
+    state.action = null;
   });
 
   function emitAction(action) {
@@ -74,6 +79,28 @@
 
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, surface.width, surface.height);
+
+      const ROUND_SECONDS = 5;
+
+      if (serverTimeDelta === null) {
+        serverTimeDelta = targetServerTimeDelta;
+      } else {
+        serverTimeDelta += (targetServerTimeDelta - serverTimeDelta) * 0.2;
+      }
+
+      const serverTime = Date.now() - serverTimeDelta;
+      const serverSeconds = serverTime / 1000;
+      const ratio = 1 - serverSeconds % ROUND_SECONDS / ROUND_SECONDS;
+
+      ctx.fillStyle = `hsl(${120 * ratio}, 100%, 50%)`;
+      ctx.beginPath();
+      ctx.moveTo(surface.width / 2, surface.height / 2);
+      ctx.arc(surface.width / 2, surface.height / 2, surface.height / 6, 0, Math.PI * 2 * ratio);
+      ctx.fill();
+      ctx.fillStyle = 'black';
+      ctx.beginPath();
+      ctx.arc(surface.width / 2, surface.height / 2, surface.height / 8, 0, Math.PI * 2);
+      ctx.fill();
 
       switch (state.action) {
       case 'left':
