@@ -3,14 +3,12 @@
 #define roadLaneWidth 4.2
 #define roadPaddingWidth 2.0
 
-#define postWidth 0.15
+#define postExtent 6.0
+#define postTopHeight 2.0
+#define postWidthFraction 0.25
+
 #define postHeight 8.1
-#define postRadius 2.1
-#define postStem 0.45
 #define postOffset 7.5
-#define postLightWidth 2.4
-#define postLightHeight 0.3
-#define postLightColor vec3(1.0, 0.9, 0.4)
 
 #define lightSpacing 100.0
 #define lightOffset 5.0
