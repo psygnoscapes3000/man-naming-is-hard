@@ -666,7 +666,7 @@ runTimer(STEP, 0, function () {
     : 0;
 
   if (totalEnd < DRAW_DISTANCE) {
-    const length = 150 + Math.floor(Math.random() * 8) * 50;
+    const length = (1 + Math.floor(Math.random() * 2)) * ROAD_SETTINGS.lightSpacing;
 
     segmentList.push({
       length: length,
