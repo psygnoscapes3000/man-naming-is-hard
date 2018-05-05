@@ -179,133 +179,95 @@ roadCmd = regl({
   count: 4
 });
 
-postCmd = regl({ context: { batchItem: { vert: glsl`
-  #pragma glslify: roadSettings = require('./roadSettings')
-  #pragma glslify: computeSegmentX = require('./segment')
+const postTexture = regl.texture({ width: 64, height: 64, min: 'nearest', mag: 'nearest', wrapS: 'repeat', wrapT: 'repeat' });
+const postImageURI = 'data:application/octet-stream;base64,' + btoa(require('fs').readFileSync(__dirname + '/post.png', 'binary'));
+loadImage(postImageURI).then(img => {
+  postTexture({ width: img.width, height: img.height, min: 'nearest', mag: 'nearest', wrapS: 'repeat', wrapT: 'repeat', data: img });
+});
 
-  varying float xOffset;
+postCmd = regl({
+  context: {
+    batchItem: { vert: glsl`
+      #pragma glslify: roadSettings = require('./roadSettings')
+      #pragma glslify: computeSegmentX = require('./segment')
 
-  void batchItemSetup(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
-    xOffset = computeSegmentX(segmentDepth, segmentCurve);
+      varying float xOffset;
+
+      void batchItemSetup(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
+        xOffset = computeSegmentX(segmentDepth, segmentCurve);
+      }
+
+      vec3 batchItemCenter(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
+        return vec3(
+          postOffset + xOffset,
+          0,
+          postHeight * 0.5
+        );
+      }
+
+      vec2 batchItemSize(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
+        return vec2(
+          postExtent * postWidthFraction,
+          postHeight
+        ) * 0.5;
+      }
+    `, frag: glsl`
+      uniform sampler2D postTexture;
+
+      vec4 batchItemColor(vec2 facePosition) {
+        return texture2D(postTexture, facePosition * vec2(0.5, -0.5) - vec2(0.5, 0.5));
+      }
+    ` }
+  },
+  uniforms: {
+    postTexture: postTexture
   }
+});
 
-  vec3 batchItemCenter(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
-    return vec3(
-      postOffset + xOffset,
-      0,
-      (postHeight - postRadius) * 0.5
-    );
+const postTopTexture = regl.texture({ width: 64, height: 64, min: 'nearest', mag: 'nearest', wrapS: 'repeat', wrapT: 'repeat' });
+const postTopImageURI = 'data:application/octet-stream;base64,' + btoa(require('fs').readFileSync(__dirname + '/post-top.png', 'binary'));
+loadImage(postTopImageURI).then(img => {
+  postTopTexture({ width: img.width, height: img.height, min: 'nearest', mag: 'nearest', wrapS: 'repeat', wrapT: 'repeat', data: img });
+});
+
+postTopCmd = regl({
+  context: {
+    batchItem: { vert: glsl`
+      #pragma glslify: roadSettings = require('./roadSettings')
+      #pragma glslify: computeSegmentX = require('./segment')
+
+      varying float xOffset;
+
+      void batchItemSetup(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
+        xOffset = computeSegmentX(segmentDepth, segmentCurve);
+      }
+
+      vec3 batchItemCenter(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
+        return vec3(
+          postOffset + xOffset - postExtent * 0.5 + postExtent * postWidthFraction * 0.5,
+          0,
+          postHeight + postTopHeight * 0.5
+        );
+      }
+
+      vec2 batchItemSize(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
+        return vec2(
+          postExtent,
+          postTopHeight
+        ) * 0.5;
+      }
+    `, frag: glsl`
+      uniform sampler2D postTopTexture;
+
+      vec4 batchItemColor(vec2 facePosition) {
+        return texture2D(postTopTexture, facePosition * vec2(0.5, -0.5) - vec2(0.5, 0.5));
+      }
+    ` }
+  },
+  uniforms: {
+    postTopTexture: postTopTexture
   }
-
-  vec2 batchItemSize(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
-    return vec2(
-      postWidth,
-      postHeight - postRadius
-    ) * 0.5;
-  }
-`, frag: glsl`
-  #pragma glslify: roadSettings = require('./roadSettings')
-
-  vec4 batchItemColor(vec2 facePosition) {
-    vec2 relpos = (facePosition * vec2(0.5, 0.5) + vec2(0.5, 0.5));
-    vec2 pos = relpos * vec2(postWidth, postHeight);
-    pos -= mod(pos, 0.15);
-
-    vec2 fadePos = pos / vec2(postWidth, postHeight);
-
-    return vec4(
-      (0.2 * (0.15 + fadePos.y * 0.85)) * postLightColor,
-      step(pos.x, postWidth)
-    );
-  }
-` } } });
-
-postTopCmd = regl({ context: { batchItem: { vert: glsl`
-  #pragma glslify: roadSettings = require('./roadSettings')
-  #pragma glslify: computeSegmentX = require('./segment')
-
-  varying float xOffset;
-
-  void batchItemSetup(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
-    xOffset = computeSegmentX(segmentDepth, segmentCurve);
-  }
-
-  vec2 batchItemSize(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
-    return vec2(
-      postRadius + postStem,
-      postRadius
-    ) * 0.5;
-  }
-
-  vec3 batchItemCenter(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
-    vec2 size = batchItemSize(segmentOffset, segmentCurve, segmentDepth);
-
-    return vec3(
-      postOffset + postWidth * 0.5 + xOffset,
-      0,
-      postHeight
-    ) - vec3(
-      size.x,
-      0,
-      size.y
-    );
-  }
-`, frag: glsl`
-  #pragma glslify: roadSettings = require('./roadSettings')
-
-  vec4 batchItemColor(vec2 facePosition) {
-    vec2 relpos = (facePosition * vec2(0.5, 0.5) + vec2(0.5, 0.5));
-    vec2 pos = relpos * vec2(postRadius + postStem, postRadius);
-    pos -= mod(pos, 0.15);
-
-    float fade = 1.0 - (pos.x - 0.15) / (postRadius + postStem);
-
-    vec2 radial = vec2(max(0.0, pos.x - postStem), pos.y);
-    float radiusSq = dot(radial, radial);
-    float postLightInner = postRadius - postWidth - 0.05;
-
-    return vec4(
-      (0.2 - fade * 0.05) * postLightColor,
-      step(radiusSq, postRadius * postRadius)
-        * step(postLightInner * postLightInner, radiusSq)
-    );
-  }
-` } } });
-
-postLightCmd = regl({ context: { batchItem: { vert: glsl`
-  #pragma glslify: roadSettings = require('./roadSettings')
-  #pragma glslify: computeSegmentX = require('./segment')
-
-  varying float xOffset;
-
-  void batchItemSetup(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
-    xOffset = computeSegmentX(segmentDepth, segmentCurve);
-  }
-
-  vec3 batchItemCenter(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
-    return vec3(
-      postOffset + postWidth * 0.5 - postRadius - postStem - postLightWidth * 0.5 + xOffset,
-      0,
-      postHeight - postLightHeight * 0.5
-    );
-  }
-
-  vec2 batchItemSize(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
-    return vec2(
-      postLightWidth,
-      postLightHeight
-    ) * 0.5;
-  }
-`, frag: glsl`
-  #pragma glslify: roadSettings = require('./roadSettings')
-
-  vec4 batchItemColor(vec2 facePosition) {
-    return vec4(
-      postLightColor,
-      1.0
-    );
-  }
-` } } });
+});
 
 carCmd = regl({
   vert: glsl`
@@ -774,9 +736,6 @@ runTimer(STEP, 0, function () {
   });
   lightSegmentItemBatchRenderer(segmentList, 0, DRAW_DISTANCE, camera, function (renderCommand) {
     postTopCmd(renderCommand);
-  });
-  lightSegmentItemBatchRenderer(segmentList, 0, DRAW_DISTANCE, camera, function (renderCommand) {
-    postLightCmd(renderCommand);
   });
 
   fenceLevels.forEach((levelDistance, level) => {
