@@ -5,6 +5,23 @@ const vec3 = require('gl-matrix').vec3;
 const vec4 = require('gl-matrix').vec4;
 const mat4 = require('gl-matrix').mat4;
 const glsl = require('glslify');
+const io = require('socket.io-client')('http://localhost:8013');
+
+let state = {};
+
+// io.on('init', (newState) => {
+//   console.log('init');
+//   state = newState;
+// });
+
+io.on('connect', () => {
+  io.emit('identify', {});
+});
+
+io.on('turn', (turn) => {
+  console.log('turn', turn);
+  //state = newState;
+});
 
 const parseGLSLConstants = require('./parseGLSLConstants');
 const { createSegmentRenderer } = require('./segment');
@@ -30,7 +47,7 @@ canvas.style.left = '0vw';
 canvas.style.width = '100vw';
 canvas.style.height = '100vh';
 canvas.style.background = '#fff';
-document.body.appendChild(canvas);
+//document.body.appendChild(canvas);
 
 canvas.width = canvas.offsetWidth;
 canvas.height = canvas.offsetHeight;
@@ -623,6 +640,7 @@ const buildingSegmentItemBatchRenderer = createSegmentItemBatchRenderer(
 );
 
 function runTimer(physicsStepDuration, initialRun, onTick, onFrame) {
+  return;
   let lastTime = performance.now();
   let initialTime = null;
   let physicsStepAccumulator = initialRun;

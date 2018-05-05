@@ -9,17 +9,27 @@
 <script>
   const socket = io();
 
-  const state = {};
+  let state = {};
 
-  socket.on('init', (data) => {
-    console.log('init', data);
+  socket.on('connect', () => {
+    console.log('connected');
+    socket.emit('identify', { isPlayer: true });
+  });
+
+  let serverTime = 0;
+
+  socket.on('time', (time) => {
+    serverTime = time;
+  });
+
+  socket.on('action_ack', (action) => {
+    console.log('action ack');
+    state.action = action;
   });
 
   function emitAction(action) {
     console.log('action', action);
     socket.emit('action', action);
-
-    state.action = action;
   }
 
   window.onload = () => {
