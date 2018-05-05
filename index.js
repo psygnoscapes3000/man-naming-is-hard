@@ -14,6 +14,5 @@ io.on('connection', (socket) => {
 
   socket.on('action', (action) => {
     console.log('action', action);
-    socket.emit('action_ack', action);
   });
 });
