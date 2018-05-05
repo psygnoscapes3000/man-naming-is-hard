@@ -114,6 +114,7 @@ roadCmd = regl({
     #pragma glslify: computeSegmentX = require('./segment')
 
     uniform float segmentOffset;
+    uniform float segmentStart;
     uniform vec3 segmentCurve;
     uniform sampler2D roadTexture;
     uniform sampler2D roadEdgeTexture;
@@ -126,7 +127,7 @@ roadCmd = regl({
       float segmentDepth = viewPlanePosition.y - segmentOffset;
       vec2 segmentPosition = vec2(
         viewPlanePosition.x - computeSegmentX(segmentDepth, segmentCurve),
-        viewPlanePosition.y
+        viewPlanePosition.y - segmentStart
       );
 
       if (abs(segmentPosition.x) > roadHalfWidth) {
@@ -544,7 +545,6 @@ const STEP = 1 / 60.0;
 const CAMERA_HEIGHT = 2.25;
 const DRAW_DISTANCE = 800;
 
-let offset = 0; // @todo wrap periodically to avoid precision issues
 const speed = 200 / 3.6; // km/h to m/s
 
 const aspect = canvas.width / canvas.height;
@@ -657,13 +657,15 @@ function runTimer(physicsStepDuration, initialRun, onTick, onFrame) {
 }
 
 runTimer(STEP, 0, function () {
-  offset += speed * STEP;
+  segmentList.forEach((segment) => {
+    segment.end -= speed * STEP;
+  });
 
   const totalEnd = segmentList.length > 0
     ? segmentList[segmentList.length - 1].end
     : 0;
 
-  if (totalEnd < offset + DRAW_DISTANCE) {
+  if (totalEnd < DRAW_DISTANCE) {
     const length = 150 + Math.floor(Math.random() * 8) * 50;
 
     segmentList.push({
@@ -673,7 +675,7 @@ runTimer(STEP, 0, function () {
     });
   }
 
-  if (segmentList.length > 0 && segmentList[0].end < offset + 3.1) {
+  if (segmentList.length > 0 && segmentList[0].end < 3.1) {
     segmentList.shift();
   }
 }, function (now) {
@@ -685,7 +687,7 @@ runTimer(STEP, 0, function () {
   // camera shake and offset
   const sideOffset = 2.0 * Math.cos(now * 0.75) + 0.02 * Math.cos(now * 3.17);
 
-  vec3.set(cameraPosition, -sideOffset, -offset, -CAMERA_HEIGHT + 0.02 * Math.cos(now * 2.31));
+  vec3.set(cameraPosition, -sideOffset, 0, -CAMERA_HEIGHT + 0.02 * Math.cos(now * 2.31));
   mat4.translate(camera, camera, cameraPosition);
 
   bgCmd({
@@ -693,7 +695,7 @@ runTimer(STEP, 0, function () {
     bottomColor: bgBottomColor,
   });
 
-  segmentRenderer(segmentList, offset, function () {
+  segmentRenderer(segmentList, function () {
     roadCmd({
       roadColor: roadColor,
       roadHighlightColor: roadHighlightColor,
@@ -704,13 +706,13 @@ runTimer(STEP, 0, function () {
     });
   });
 
-  lightSegmentItemBatchRenderer(segmentList, 0, DRAW_DISTANCE, offset, camera, function (renderCommand) {
+  lightSegmentItemBatchRenderer(segmentList, 0, DRAW_DISTANCE, camera, function (renderCommand) {
     postCmd(renderCommand);
   });
-  lightSegmentItemBatchRenderer(segmentList, 0, DRAW_DISTANCE, offset, camera, function (renderCommand) {
+  lightSegmentItemBatchRenderer(segmentList, 0, DRAW_DISTANCE, camera, function (renderCommand) {
     postTopCmd(renderCommand);
   });
-  lightSegmentItemBatchRenderer(segmentList, 0, DRAW_DISTANCE, offset, camera, function (renderCommand) {
+  lightSegmentItemBatchRenderer(segmentList, 0, DRAW_DISTANCE, camera, function (renderCommand) {
     postLightCmd(renderCommand);
   });
 
@@ -718,20 +720,20 @@ runTimer(STEP, 0, function () {
     // ensure absolute minimum distance for sprites to avoid extreme close-up flicker
     const prevDistance = level === 0 ? 0 : fenceLevels[level - 1];
 
-    fenceSegmentItemBatchRenderer(segmentList, prevDistance, levelDistance, offset, camera, function (renderCommand) {
+    fenceSegmentItemBatchRenderer(segmentList, prevDistance, levelDistance, camera, function (renderCommand) {
       fenceCmd({
         hFlip: -1,
         level: level,
-        cameraOffset: offset,
+        cameraOffset: 0,
         cameraSideOffset: sideOffset
       }, renderCommand);
     });
 
-    fenceSegmentItemBatchRenderer(segmentList, prevDistance, levelDistance, offset, camera, function (renderCommand) {
+    fenceSegmentItemBatchRenderer(segmentList, prevDistance, levelDistance, camera, function (renderCommand) {
       fenceCmd({
         hFlip: 1,
         level: level,
-        cameraOffset: offset,
+        cameraOffset: 0,
         cameraSideOffset: sideOffset
       }, renderCommand);
     });
@@ -741,20 +743,20 @@ runTimer(STEP, 0, function () {
     // ensure absolute minimum distance for sprites to avoid extreme close-up flicker
     const prevDistance = level === 0 ? 0 : buildingLevels[level - 1];
 
-    buildingSegmentItemBatchRenderer(segmentList, prevDistance, levelDistance, offset, camera, function (renderCommand) {
+    buildingSegmentItemBatchRenderer(segmentList, prevDistance, levelDistance, camera, function (renderCommand) {
       buildingCmd({
         hFlip: -1,
         level: level,
-        cameraOffset: offset,
+        cameraOffset: 0,
         cameraSideOffset: sideOffset
       }, renderCommand);
     });
 
-    buildingSegmentItemBatchRenderer(segmentList, prevDistance, levelDistance, offset, camera, function (renderCommand) {
+    buildingSegmentItemBatchRenderer(segmentList, prevDistance, levelDistance, camera, function (renderCommand) {
       buildingCmd({
         hFlip: 1,
         level: level,
-        cameraOffset: offset,
+        cameraOffset: 0,
         cameraSideOffset: sideOffset
       }, renderCommand);
     });

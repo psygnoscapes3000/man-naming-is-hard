@@ -6,6 +6,7 @@ function createSegmentRenderer(regl) {
     },
 
     uniforms: {
+      segmentStart: regl.prop('segmentStart'),
       segmentOffset: regl.prop('segmentOffset'),
       segmentLength: regl.prop('segmentLength'),
       segmentCurve: regl.prop('segmentCurve'),
@@ -17,12 +18,13 @@ function createSegmentRenderer(regl) {
   // walk segment list in view and compute visible curve parameters
   // ensuring no part of the segment is "behind" camera (otherwise perspective correction gets busted)
   // @todo move that setting out?
-  return function (segmentList, offset, cb) {
+  return function (segmentList, cb) {
     let x = 0;
     let dx = 0;
 
     segmentList.forEach(function (segment) {
-      const segmentOffset = Math.max(offset + 1, segment.end - segment.length);
+      const segmentStart = segment.end - segment.length;
+      const segmentOffset = Math.max(1, segmentStart);
       const segmentLength = segment.end - segmentOffset;
 
       // safety check
@@ -38,6 +40,7 @@ function createSegmentRenderer(regl) {
       );
 
       scopeCommand({
+        segmentStart,
         segmentOffset,
         segmentLength,
         segmentCurve

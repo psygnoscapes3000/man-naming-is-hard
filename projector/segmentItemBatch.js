@@ -12,6 +12,7 @@ function generateVertShader(upstream) {
             // upstream code first, to discourage use of internals
             ${upstream}
 
+            uniform float segmentStart;
             uniform float segmentOffset;
             uniform float segmentLength;
             uniform vec3 segmentCurve;
@@ -31,11 +32,8 @@ function generateVertShader(upstream) {
             varying vec2 facePosition;
 
             void main() {
-                float segmentStartItemIndex = ceil((segmentOffset - batchItemOffset) / batchItemSpacing);
-                float nextSegmentStartItemIndex = ceil((segmentOffset + segmentLength - batchItemOffset) / batchItemSpacing);
-
-                float segmentItemIndex = segmentStartItemIndex + float(batchIndex) * batchSize + position.z;
-                float viewPlanePositionY = segmentItemIndex * batchItemSpacing + batchItemOffset;
+                float segmentItemIndex = float(batchIndex) * batchSize + position.z;
+                float viewPlanePositionY = segmentStart + segmentItemIndex * batchItemSpacing + batchItemOffset;
                 float segmentDepth = viewPlanePositionY - segmentOffset;
 
                 facePosition = position.xy;
@@ -50,8 +48,7 @@ function generateVertShader(upstream) {
                         position.x * itemSize.x,
                         viewPlanePositionY
                             * step(visibleMinDepth, viewPlanePositionY) // hide if too close
-                            * step(viewPlanePositionY, visibleMaxDepth) // hide if too far
-                            * step(segmentItemIndex, nextSegmentStartItemIndex - 0.5), // stop before next segment (exclusive range)
+                            * step(viewPlanePositionY, min(visibleMaxDepth, segmentOffset + segmentLength)), // hide if too far
                         position.y * itemSize.y
                     ),
                     1.0
@@ -138,12 +135,12 @@ function createSegmentItemBatchRenderer(regl, segmentRenderer, itemBatchSize, it
         frag: regl.context('generatedFrag')
     });
 
-    return function (segmentList, minDepth, maxDepth, offset, camera, cb) {
+    return function (segmentList, minDepth, maxDepth, camera, cb) {
         const itemBatchLength = itemSpacing * itemBatchSize;
-        const visibleMinDepth = offset + minDepth;
-        const visibleMaxDepth = offset + maxDepth;
+        const visibleMinDepth = minDepth;
+        const visibleMaxDepth = maxDepth;
 
-        segmentRenderer(segmentList, offset, function (segmentOffset, segmentLength) {
+        segmentRenderer(segmentList, function (segmentOffset, segmentLength) {
             // weed out wholesale if out of range
             if (segmentOffset + segmentLength < visibleMinDepth) {
                 return;
