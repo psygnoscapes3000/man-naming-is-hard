@@ -37,13 +37,27 @@
     socket.emit('action', action);
   }
 
+  const arcadeButtons = new Image();
+  arcadeButtons.src = 'arcade-buttons.png';
+
   window.onload = () => {
     const fullscreen = document.getElementById('fullscreen');
     const surface = document.getElementById('surface');
+    const ctx = surface.getContext('2d');
+
+    const MAX_HEIGHT = 160;
+
+    let hScale = null;
+    let aspectRatio = null;
 
     function resize() {
       surface.width = surface.clientWidth;
       surface.height = surface.clientHeight;
+
+      hScale = surface.height / MAX_HEIGHT;
+
+      ctx.scale(hScale, hScale);
+      ctx.imageSmoothingEnabled = false;
     }
 
     window.addEventListener('resize', resize);
@@ -72,12 +86,10 @@
       }
     });
 
-    const ctx = surface.getContext('2d');
-
     function paint() {
       requestAnimationFrame(paint);
 
-      ctx.fillStyle = 'black';
+      ctx.fillStyle = '#333333';
       ctx.fillRect(0, 0, surface.width, surface.height);
 
       const ROUND_SECONDS = 5;
@@ -97,10 +109,38 @@
       ctx.moveTo(surface.width / 2, surface.height / 2);
       ctx.arc(surface.width / 2, surface.height / 2, surface.height / 6, 0, Math.PI * 2 * ratio);
       ctx.fill();
-      ctx.fillStyle = 'black';
+      ctx.fillStyle = '#333333';
       ctx.beginPath();
       ctx.arc(surface.width / 2, surface.height / 2, surface.height / 8, 0, Math.PI * 2);
       ctx.fill();
+
+      const GUTTER = 8;
+      const BUTTON_WIDTH = 41;
+      const BUTTON_HEIGHT = 42;
+      const BUTTON_SPACING = 10;
+
+      const ctxWidth = surface.width / hScale;
+
+      ctx.drawImage(
+        arcadeButtons,
+        0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
+        GUTTER, (MAX_HEIGHT - BUTTON_HEIGHT) >> 1, BUTTON_WIDTH, BUTTON_HEIGHT
+      );
+      ctx.drawImage(
+        arcadeButtons,
+        0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
+        GUTTER + BUTTON_WIDTH + BUTTON_SPACING, (MAX_HEIGHT - BUTTON_HEIGHT) >> 1, BUTTON_WIDTH, BUTTON_HEIGHT
+      );
+      ctx.drawImage(
+        arcadeButtons,
+        0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
+        ctxWidth - GUTTER - BUTTON_WIDTH, ((MAX_HEIGHT - BUTTON_SPACING) >> 1) - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT
+      );
+      ctx.drawImage(
+        arcadeButtons,
+        0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
+        ctxWidth - GUTTER - BUTTON_WIDTH, (MAX_HEIGHT + BUTTON_SPACING) >> 1, BUTTON_WIDTH, BUTTON_HEIGHT
+      );
 
       switch (state.action) {
       case 'left':
