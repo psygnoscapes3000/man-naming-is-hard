@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
-<link href="https://fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=VT323" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.slim.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/screenfull.js/3.3.2/screenfull.min.js"></script>
@@ -51,8 +51,8 @@
     let aspectRatio = null;
 
     function resize() {
-      surface.width = surface.clientWidth;
-      surface.height = surface.clientHeight;
+      surface.width = MAX_HEIGHT / surface.clientHeight * surface.clientWidth;
+      surface.height = MAX_HEIGHT;
 
       hScale = surface.height / MAX_HEIGHT;
 
@@ -89,8 +89,10 @@
     function paint() {
       requestAnimationFrame(paint);
 
+      const ctxWidth = surface.width / hScale;
+
       ctx.fillStyle = '#333333';
-      ctx.fillRect(0, 0, surface.width, surface.height);
+      ctx.fillRect(0, 0, ctxWidth, MAX_HEIGHT);
 
       const ROUND_SECONDS = 5;
 
@@ -106,52 +108,49 @@
 
       ctx.fillStyle = `hsl(${120 * ratio}, 100%, 50%)`;
       ctx.beginPath();
-      ctx.moveTo(surface.width / 2, surface.height / 2);
-      ctx.arc(surface.width / 2, surface.height / 2, surface.height / 6, 0, Math.PI * 2 * ratio);
+      ctx.moveTo(ctxWidth / 2, MAX_HEIGHT / 2);
+      ctx.arc(ctxWidth / 2, MAX_HEIGHT / 2, MAX_HEIGHT / 6, 0, Math.PI * 2 * ratio);
       ctx.fill();
       ctx.fillStyle = '#333333';
       ctx.beginPath();
-      ctx.arc(surface.width / 2, surface.height / 2, surface.height / 8, 0, Math.PI * 2);
+      ctx.arc(ctxWidth / 2, MAX_HEIGHT / 2, MAX_HEIGHT / 8, 0, Math.PI * 2);
       ctx.fill();
 
       const GUTTER = 8;
       const BUTTON_WIDTH = 41;
       const BUTTON_HEIGHT = 42;
       const BUTTON_SPACING = 10;
+      const ACTIVE_BUTTON_OFFSET = BUTTON_WIDTH + 5;
 
-      const ctxWidth = surface.width / hScale;
+      const leftActive = state.action === 'left';
+      const rightActive = state.action === 'right';
+      const upActive = state.action === 'up';
+      const downActive = state.action === 'down';
 
+      // Left button
       ctx.drawImage(
         arcadeButtons,
-        0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
-        GUTTER, (MAX_HEIGHT - BUTTON_HEIGHT) >> 1, BUTTON_WIDTH, BUTTON_HEIGHT
+        leftActive ? ACTIVE_BUTTON_OFFSET : 0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
+        GUTTER, (MAX_HEIGHT - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT
       );
+      // Right button
       ctx.drawImage(
         arcadeButtons,
-        0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
-        GUTTER + BUTTON_WIDTH + BUTTON_SPACING, (MAX_HEIGHT - BUTTON_HEIGHT) >> 1, BUTTON_WIDTH, BUTTON_HEIGHT
+        rightActive ? ACTIVE_BUTTON_OFFSET : 0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
+        GUTTER + BUTTON_WIDTH + BUTTON_SPACING, (MAX_HEIGHT - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT
       );
+      // Up button
       ctx.drawImage(
         arcadeButtons,
-        0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
-        ctxWidth - GUTTER - BUTTON_WIDTH, ((MAX_HEIGHT - BUTTON_SPACING) >> 1) - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT
+        upActive ? ACTIVE_BUTTON_OFFSET : 0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
+        ctxWidth - GUTTER - BUTTON_WIDTH, (MAX_HEIGHT - BUTTON_SPACING) / 2 - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT
       );
+      // Down button
       ctx.drawImage(
         arcadeButtons,
-        0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
-        ctxWidth - GUTTER - BUTTON_WIDTH, (MAX_HEIGHT + BUTTON_SPACING) >> 1, BUTTON_WIDTH, BUTTON_HEIGHT
+        downActive ? ACTIVE_BUTTON_OFFSET : 0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
+        ctxWidth - GUTTER - BUTTON_WIDTH, (MAX_HEIGHT + BUTTON_SPACING) / 2, BUTTON_WIDTH, BUTTON_HEIGHT
       );
-
-      switch (state.action) {
-      case 'left':
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, surface.width / 2, surface.height);
-        break;
-      case 'right':
-        ctx.fillStyle = 'white';
-        ctx.fillRect(surface.width / 2, 0, surface.width / 2, surface.height);
-        break;
-      }
     }
 
     requestAnimationFrame(paint);
@@ -165,7 +164,8 @@ body {
   margin: 0;
   padding: 0;
   position: relative;
-  font-family: 'Varela Round', sans-serif;
+  font-family: 'VT323', monospace;
+  -webkit-font-smoothing: never;
   overflow: hidden;
 }
 #surface {
@@ -177,8 +177,8 @@ body {
 }
 #fullscreen {
   position: absolute;
-  font-size: 1em;
-  line-height: 10em;
+  font-size: 3em;
+  line-height: 1em;
   font-weight: bold;
   top: 0;
   left: 0;
