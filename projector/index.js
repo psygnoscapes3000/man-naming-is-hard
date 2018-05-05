@@ -297,7 +297,7 @@ postLightCmd = regl({ context: { batchItem: { vert: glsl`
   }
 ` } } });
 
-function createSpriteTexture(sourcePromise, textureW, textureH, levels, surfaceDepth, surfaceXOffset) {
+function createSpriteTexture(sourcePromise, textureW, textureH, textureMultiplierW, textureMultiplierH, levels, surfaceDepth, surfaceXOffset, surfaceHeight) {
   const spriteCanvas = document.createElement('canvas');
   spriteCanvas.style.position = 'absolute';
   spriteCanvas.style.top = '0px';
@@ -342,7 +342,7 @@ function createSpriteTexture(sourcePromise, textureW, textureH, levels, surfaceD
       // @todo use middle of range?
       const visibleSideRun = surfaceXOffset * surfaceDepth / (perspectiveDepth + surfaceDepth);
 
-      const cameraHeightRatio = CAMERA_HEIGHT / ROAD_SETTINGS.fenceHeight;
+      const cameraHeightRatio = CAMERA_HEIGHT / surfaceHeight;
       const cameraHeightRatio2 = 1 - cameraHeightRatio;
 
       const texelBiasW = 1 / (2 * textureW);
@@ -370,8 +370,8 @@ function createSpriteTexture(sourcePromise, textureW, textureH, levels, surfaceD
             return;
           }
 
-          const sourceX = Math.floor(surfaceX * sourceW);
-          const sourceY = sourceH - 1 - Math.floor(surfaceY * sourceH);
+          const sourceX = Math.floor(surfaceX * sourceW * textureMultiplierW) % sourceW;
+          const sourceY = sourceH - 1 - Math.floor(surfaceY * sourceH * textureMultiplierH) % sourceH;
           const sourcePixel = sourceCtx.getImageData(sourceX, sourceY, 1, 1).data;
 
           spriteCtx.fillStyle = `rgb(${sourcePixel[0]}, ${sourcePixel[1]}, ${sourcePixel[2]})`;
@@ -393,11 +393,13 @@ function createSpriteTexture(sourcePromise, textureW, textureH, levels, surfaceD
   return spriteTexture;
 }
 
-function createFenceCommand(spriteTexture, levelCount, closeupDistance, cameraHeight) {
+function createFenceCommand(spriteTexture, levelCount, closeupDistance, cameraHeight, fenceHeight, fenceXOffset, fenceSpacing) {
   return regl({ context: { batchItem: { vert: glsl`
-    #pragma glslify: roadSettings = require('./roadSettings')
     #pragma glslify: computeSegmentX = require('./segment', computeSegmentDX=computeSegmentDX)
 
+    #define fenceHeight float(${fenceHeight})
+    #define fenceXOffset float(${fenceXOffset})
+    #define fenceSpacing float(${fenceSpacing})
     #define closeupDistance float(${closeupDistance})
     #define cameraHeight float(${cameraHeight})
 
@@ -560,18 +562,39 @@ const fenceTextureW = 32;
 const fenceTextureH = 32;
 const fenceLevels = [ 20, 40, 80, 160, 1000 ];
 
-const fenceImageURI = 'data:application/octet-stream;base64,' + btoa(require('fs').readFileSync(__dirname + '/wall.png', 'binary'))
+const fenceImageURI = 'data:application/octet-stream;base64,' + btoa(require('fs').readFileSync(__dirname + '/wall.png', 'binary'));
 const fenceImagePromise = loadImage(fenceImageURI);
 
 const fenceTexture = createSpriteTexture(
   fenceImagePromise,
   fenceTextureW,
   fenceTextureH,
+  1,
+  1,
   fenceLevels,
   ROAD_SETTINGS.fenceSpacing,
-  ROAD_SETTINGS.fenceXOffset
+  ROAD_SETTINGS.fenceXOffset,
+  ROAD_SETTINGS.fenceHeight
 );
-const fenceCmd = createFenceCommand(fenceTexture, fenceLevels.length, (ROAD_SETTINGS.fenceSpacing - 3), CAMERA_HEIGHT);
+const fenceCmd = createFenceCommand(fenceTexture, fenceLevels.length, (ROAD_SETTINGS.fenceSpacing - 3), CAMERA_HEIGHT, ROAD_SETTINGS.fenceHeight, ROAD_SETTINGS.fenceXOffset, ROAD_SETTINGS.fenceSpacing);
+
+const buildingLevels = [ 20, 80, 160, 320, 1000 ];
+
+const buildingImageURI = 'data:application/octet-stream;base64,' + btoa(require('fs').readFileSync(__dirname + '/building.png', 'binary'));
+const buildingImagePromise = loadImage(buildingImageURI);
+
+const buildingTexture = createSpriteTexture(
+  buildingImagePromise,
+  32,
+  256,
+  1,
+  8,
+  buildingLevels,
+  ROAD_SETTINGS.buildingSpacing,
+  ROAD_SETTINGS.buildingXOffset,
+  ROAD_SETTINGS.buildingHeight
+);
+const buildingCmd = createFenceCommand(buildingTexture, buildingLevels.length, 2, CAMERA_HEIGHT, ROAD_SETTINGS.buildingHeight, ROAD_SETTINGS.buildingXOffset, ROAD_SETTINGS.buildingSpacing);
 
 const segmentRenderer = createSegmentRenderer(regl);
 const lightSegmentItemBatchRenderer = createSegmentItemBatchRenderer(
@@ -588,6 +611,14 @@ const fenceSegmentItemBatchRenderer = createSegmentItemBatchRenderer(
   segmentRenderer,
   50,
   ROAD_SETTINGS.fenceSpacing,
+  6
+);
+
+const buildingSegmentItemBatchRenderer = createSegmentItemBatchRenderer(
+  regl,
+  segmentRenderer,
+  50,
+  ROAD_SETTINGS.buildingSpacing,
   6
 );
 
@@ -695,6 +726,29 @@ runTimer(STEP, 0, function () {
 
     fenceSegmentItemBatchRenderer(segmentList, prevDistance, levelDistance, offset, camera, function (renderCommand) {
       fenceCmd({
+        hFlip: 1,
+        level: level,
+        cameraOffset: offset,
+        cameraSideOffset: sideOffset
+      }, renderCommand);
+    });
+  });
+
+  buildingLevels.forEach((levelDistance, level) => {
+    // ensure absolute minimum distance for sprites to avoid extreme close-up flicker
+    const prevDistance = level === 0 ? 0 : buildingLevels[level - 1];
+
+    buildingSegmentItemBatchRenderer(segmentList, prevDistance, levelDistance, offset, camera, function (renderCommand) {
+      buildingCmd({
+        hFlip: -1,
+        level: level,
+        cameraOffset: offset,
+        cameraSideOffset: sideOffset
+      }, renderCommand);
+    });
+
+    buildingSegmentItemBatchRenderer(segmentList, prevDistance, levelDistance, offset, camera, function (renderCommand) {
+      buildingCmd({
         hFlip: 1,
         level: level,
         cameraOffset: offset,

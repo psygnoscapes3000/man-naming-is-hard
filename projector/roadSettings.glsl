@@ -21,6 +21,10 @@
 #define fenceHeight 2.5
 #define fenceXOffset 7.5
 
+#define buildingSpacing 25
+#define buildingHeight 50
+#define buildingXOffset 20
+
 void roadSettings() {}
 
 #pragma glslify: export(roadSettings)
