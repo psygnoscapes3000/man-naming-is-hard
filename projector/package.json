@@ -6,6 +6,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "browserify": {
+    "transform": [
+      "glslify",
+      "brfs"
+    ]
+  },
   "dependencies": {
     "brfs": "^1.4.3",
     "browserify": "^14.4.0",
