@@ -73,8 +73,8 @@ io.on('connection', (socket) => {
   socket.on('identify', (identity) => {
     if (identity.isPlayer) {
       if (!(players.length < CARS.length)) {
-        console.log('max players');
-        socket.emit('max_players_reached');
+        console.log('game full');
+        socket.emit('game-full');
         return;
       }
 

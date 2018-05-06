@@ -49,7 +49,7 @@ function connect() {
     document.getElementById('car').className = player.car.toLowerCase();
   });
 
-  socket.on('max_players_reached', () => {
+  socket.on('game-full', () => {
     document.getElementById('game').style.display = 'none';
     document.getElementById('game-full').style.display = 'block';
   });
