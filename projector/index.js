@@ -300,15 +300,22 @@ carCmd = regl({
   `,
 
   frag: glsl`
+    #pragma glslify: roadSettings = require('./roadSettings')
+
     precision mediump float;
 
+    uniform float segmentStart;
     uniform float carIndex;
+    uniform float carPositionY;
     uniform sampler2D carTexture;
 
     varying vec2 facePosition;
 
     void main() {
+      float lightDistance = abs(mod((carPositionY - segmentStart + lightOffset) / lightSpacing, 1.0) - 0.5) * 2.0;
+
       gl_FragColor = texture2D(carTexture, facePosition * vec2(0.125, -0.5) + vec2((carIndex + 0.5) * 0.25, 0.5));
+      gl_FragColor.rgb *= 0.8 + max(0.0, 2.0 * lightDistance * lightDistance - 0.2);
 
       if (gl_FragColor.a < 1.0) {
         discard;
