@@ -603,6 +603,8 @@ const markerHighlightColor = vec3.fromValues(...onecolor('#ffffff').toJSON().sli
 
 const segmentList = [];
 
+const CARS = [ 'FURY', 'STING', 'STORM', 'MAGIC' ];
+
 const carList = [];
 
 io.on('connect', () => {
@@ -616,6 +618,8 @@ function updateState(state) {
       nextPos: vec2.fromValues(0, 0),
       pos: null
     };
+
+    car.car = player.car;
 
     vec2.set(
       car.nextPos,
@@ -782,13 +786,13 @@ runTimer(STEP, 0, function () {
   });
 
   segmentRenderer(segmentList, function (segmentOffset, segmentLength) {
-    carList.forEach((car, playerIndex) => {
+    carList.forEach((car) => {
       if (car.pos[1] <= segmentOffset || car.pos[1] > segmentOffset + segmentLength) {
         return;
       }
 
       carCmd({
-        carIndex: playerIndex,
+        carIndex: CARS.indexOf(car.car),
         carPositionX: car.pos[0],
         carPositionY: car.pos[1],
         camera: camera
