@@ -583,13 +583,13 @@ const camera = mat4.create();
 
 const STEP = 1 / 60.0;
 
-const CAMERA_HEIGHT = 2.25;
+const CAMERA_HEIGHT = 3.25;
 const DRAW_DISTANCE = 800;
 
-const speed = 200 / 3.6; // km/h to m/s
+const speed = 300 / 3.6; // km/h to m/s
 
 const aspect = canvas.width / canvas.height;
-const fovX = 1.0;
+const fovX = 0.6;
 const fovY = 2.0 * Math.atan(Math.tan(fovX * 0.5) / aspect);
 
 const bgTopColor = vec3.fromValues(...onecolor('#005555').toJSON().slice(1));
