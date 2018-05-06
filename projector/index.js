@@ -48,6 +48,24 @@ div.style.fontSize = '24px';
 div.appendChild(document.createTextNode('github.com/psygnoscapes3000'));
 document.body.appendChild(div);
 
+const turnTimer = document.createElement('div');
+turnTimer.style.position = 'fixed';
+turnTimer.style.bottom = '30px';
+turnTimer.style.left = '50%';
+turnTimer.style.width = '40vw';
+turnTimer.style.height = '3vh';
+turnTimer.style.marginLeft = '-20vw';
+document.body.appendChild(turnTimer);
+
+const turnTimerBody = document.createElement('div');
+turnTimerBody.style.margin = 'auto';
+turnTimerBody.style.transition = '0.25s ease-out width';
+turnTimerBody.style.width = '100%';
+turnTimerBody.style.height = '100%';
+turnTimerBody.style.background = '#fff';
+turnTimerBody.style.borderBottom = '4px solid #000';
+turnTimer.appendChild(turnTimerBody);
+
 const regl = require('regl')({
   canvas: canvas,
   attributes: { antialias: false, alpha: false }
@@ -612,6 +630,8 @@ io.on('connect', () => {
   io.emit('identify', {});
 });
 
+let serverTimeDelta = null;
+
 function updateState(state) {
   const goners = carList.filter(car => !state.players.some(player => player.car === car.id));
 
@@ -652,6 +672,23 @@ io.on('init', (newState) => {
 io.on('turn', (newState) => {
   updateState(newState);
 });
+
+io.on('time', (time) => {
+  serverTimeDelta = Date.now() - time;
+});
+
+setInterval(() => {
+  Date.now()
+
+  const ROUND_SECONDS = 3;
+  const serverTime = Date.now() - serverTimeDelta;
+  const serverSeconds = serverTime / 1000;
+  const counter = Math.floor((serverSeconds - 1 - 0.25) % ROUND_SECONDS);
+  const ratio = ((ROUND_SECONDS * 2 - 1 - 2 * counter)) / (ROUND_SECONDS * 2 - 1);
+
+  turnTimerBody.style.width = `${ratio * 100}%`;
+  turnTimerBody.style.background = counter === ROUND_SECONDS - 1 ? '#fff' : '#aaa';
+}, 250);
 
 // no need for sprite distance closer than 20 because the added transition "pop" is too close and not worth the precision
 const fenceTextureW = 32;
