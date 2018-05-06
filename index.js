@@ -9,6 +9,8 @@ server.listen(8013);
 
 app.use('/', express.static('.'));
 
+const CARS = [ 'FURY', 'STING', 'STORM', 'MAGIC' ];
+
 let players = [];
 
 class Player {
@@ -17,6 +19,7 @@ class Player {
     this.action = null;
     this.row = null;
     this.col = null;
+    this.car = null;
   }
 }
 
@@ -25,6 +28,10 @@ const COLS = 3;
 
 function isOccupied(col, row) {
   return players.some((player) => player.row === row && player.col === col);
+}
+
+function isCarTaken(car) {
+  return players.some((player) => player.car === car);
 }
 
 function movePlayer(player, cols, rows) {
@@ -53,12 +60,19 @@ function placePlayer(player) {
   return !isOccupied(player.col, player.row);
 }
 
+// Find unassigned car and return if found
+function assignCar(player) {
+  player.car = CARS[Math.random() * CARS.length | 0];
+
+  return !isCarTaken(player.car);
+}
+
 io.on('connection', (socket) => {
   console.log('connected');
 
   socket.on('identify', (identity) => {
     if (identity.isPlayer) {
-      if (players.length === ROWS * COLS) {
+      if (!(players.length < CARS.length)) {
         console.log('max players');
         return;
       }
@@ -66,6 +80,7 @@ io.on('connection', (socket) => {
       const player = new Player();
 
       while (!placePlayer(player));
+      while (!assignCar(player));
 
       players.push(player);
 
@@ -98,7 +113,10 @@ npcList = [];
 
 Array(...new Array(2)).forEach(() => {
   const npc = new Player();
-  placePlayer(npc);
+
+  while (!placePlayer(npc));
+  while (!assignCar(npc));
+
   players.push(npc);
 
   npcList.push(npc);
