@@ -15,7 +15,7 @@ const ROAD_SETTINGS = parseGLSLConstants(
   fs.readFileSync(__dirname + '/roadSettings.glsl', 'utf8')
 );
 
-document.title = 'Pursuit Hunter';
+document.title = 'MIDNIGHT TACTIX 3000';
 
 document.body.parentElement.style.height = '100%';
 document.body.style.margin = '0';
