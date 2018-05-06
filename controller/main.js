@@ -1,5 +1,3 @@
-const socket = io({ transports: [ 'websocket' ], upgrade: false });
-
 const CARS = {
   FURY: {
     name: 'Fury',
@@ -23,49 +21,60 @@ const CARS = {
   }
 };
 
+const arcadeButtons = new Image();
+arcadeButtons.src = 'arcade-buttons.png';
+
+let socket = null;
 let state = {};
-
-socket.on('connect', () => {
-  console.log('connected');
-  socket.emit('identify', { isPlayer: true });
-});
-
 let serverTimeDelta = null;
 let targetServerTimeDelta = null;
 
-socket.on('time', (time) => {
-  targetServerTimeDelta = Date.now() - time;
-});
+function connect() {
+  socket = io({ transports: [ 'websocket' ], upgrade: false });
 
-socket.on('action_ack', (action) => {
-  console.log('action ack');
-  state.action = action;
-});
+  socket.on('connect', () => {
+    console.log('connected');
+    socket.emit('identify', { isPlayer: true });
+  });
 
-socket.on('car', (car) => {
-  console.log('my car is', car);
-  state.car = car;
-});
+  socket.on('time', (time) => {
+    targetServerTimeDelta = Date.now() - time;
+  });
 
-socket.on('max_players_reached', () => {
-  console.error('No space on server');
-  state.error = 'No space on server';
-});
+  socket.on('action_ack', (action) => {
+    console.log('action ack');
+    state.action = action;
+  });
 
-socket.on('turn', () => {
-  state.action = null;
-});
+  socket.on('car', (car) => {
+    console.log('my car is', car);
+    state.car = car;
+
+    const carInfo = CARS[state.car];
+
+    const name = document.getElementById('name');
+    name.style.color = carInfo.highlightColor;
+    name.innerHTML = carInfo.name;
+  });
+
+  socket.on('max_players_reached', () => {
+    console.error('No space on server');
+    state.error = 'No space on server';
+  });
+
+  socket.on('turn', () => {
+    state.action = null;
+  });
+}
 
 function emitAction(action) {
   console.log('action', action);
   socket.emit('action', action);
 }
 
-const arcadeButtons = new Image();
-arcadeButtons.src = 'arcade-buttons.png';
-
 window.onload = () => {
-  const fullscreen = document.getElementById('fullscreen');
+  const preamble = document.getElementById('preamble');
+  const join = document.getElementById('join');
   const surface = document.getElementById('surface');
   const ctx = surface.getContext('2d');
 
@@ -82,12 +91,15 @@ window.onload = () => {
 
   resize();
 
-  if (screenfull.enabled) {
-    fullscreen.addEventListener('click', () => {
-      fullscreen.parentNode.removeChild(fullscreen);
-      screenfull.request(surface);
-    });
-  }
+  join.addEventListener('click', () => {
+    preamble.parentNode.removeChild(preamble);
+
+    if (screenfull.enabled) {
+      screenfull.request();
+    }
+
+    connect();
+  });
 
   const hammertime = new Hammer(surface, {});
 
@@ -136,7 +148,7 @@ window.onload = () => {
   function paint() {
     requestAnimationFrame(paint);
 
-    ctx.fillStyle = '#333333';
+    ctx.fillStyle = '#333';
     ctx.fillRect(0, 0, surface.width, MAX_HEIGHT);
 
     const ROUND_SECONDS = 3;
@@ -156,7 +168,7 @@ window.onload = () => {
     ctx.moveTo(surface.width / 2, MAX_HEIGHT / 2);
     ctx.arc(surface.width / 2, MAX_HEIGHT / 2, MAX_HEIGHT / 8, 0, Math.PI * 2 * ratio);
     ctx.fill();
-    ctx.fillStyle = '#333333';
+    ctx.fillStyle = '#333';
     ctx.beginPath();
     ctx.arc(surface.width / 2, MAX_HEIGHT / 2, MAX_HEIGHT / 10, 0, Math.PI * 2);
     ctx.fill();
@@ -170,15 +182,6 @@ window.onload = () => {
         BUTTON_WIDTH, BUTTON_HEIGHT
       );
     });
-
-    if (state.car) {
-      const car = CARS[state.car];
-
-      ctx.font = `${NAME_SIZE}px VT323, monospace`;
-      ctx.textAlign = 'center';
-      ctx.fillStyle = car.highlightColor;
-      ctx.fillText(car.name, surface.width / 2, NAME_SIZE);
-    }
   }
 
   requestAnimationFrame(paint);

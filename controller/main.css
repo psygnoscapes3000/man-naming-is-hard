@@ -5,9 +5,14 @@ body {
   margin: 0;
   padding: 0;
   position: relative;
+  overflow: hidden;
+}
+body, button {
   font-family: 'VT323', monospace;
   -webkit-font-smoothing: never;
-  overflow: hidden;
+}
+button {
+  cursor: pointer;
 }
 #surface {
   position: absolute;
@@ -16,18 +21,62 @@ body {
   width: 100%;
   height: 100%;
 }
-#fullscreen {
+#overlay {
   position: absolute;
-  font-size: 3em;
-  line-height: 1em;
-  font-weight: bold;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  padding: 1em;
-  box-sizing: border-box;
-  color: white;
+}
+#name {
   text-align: center;
-  cursor: pointer;
+  font-size: 20vh;
+  line-height: 20vh;
+  margin-top: 5vh;
+}
+#preamble {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  background: #333;
+}
+#title {
+  text-transform: uppercase;
+  color: white;
+  margin: 15vh 0 0;
+  font-size: 15vh;
+  line-height: 15vh;
+  font-weight: normal;
+}
+#join {
+  background: green;
+  color: lime;
+  border: 0;
+  padding: 5vh 15vh;
+  margin-top: 10vh;
+  font-size: 30vh;
+  text-transform: uppercase;
+}
+#portrait-error {
+  position: absolute;
+  text-align: center;
+  font-size: 10vh;
+  line-height: 10vh;
+  box-sizing: border-box;
+  padding: 15vh 5vh;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  color: red;
+  background: maroon;
+  text-transform: uppercase;
+}
+@media screen and (orientation: landscape) {
+  #portrait-error {
+    display: none;
+  }
 }
