@@ -271,8 +271,15 @@ postTopCmd = regl({
 
 carCmd = regl({
   vert: glsl`
+    #pragma glslify: roadSettings = require('./roadSettings')
+    #pragma glslify: computeSegmentX = require('./segment', computeSegmentDX=computeSegmentDX)
+
     precision mediump float;
 
+    uniform float segmentOffset;
+    uniform vec3 segmentCurve;
+    uniform float carLane;
+    uniform float carPositionY;
     uniform mat4 camera;
     attribute vec2 position;
 
@@ -281,9 +288,11 @@ carCmd = regl({
     void main() {
       facePosition = position;
 
+      float xOffset = computeSegmentX(carPositionY - segmentOffset, segmentCurve);
+
       gl_Position = camera * vec4(
-        position.x * 1.2,
-        10.0,
+        (carLane - roadLaneCount * 0.5 + 0.5) * roadLaneWidth + xOffset + position.x * 1.2,
+        carPositionY,
         (position.y + 0.72) * 1.2,
         1.0
       );
@@ -291,14 +300,22 @@ carCmd = regl({
   `,
 
   frag: glsl`
+    #pragma glslify: roadSettings = require('./roadSettings')
+
     precision mediump float;
 
+    uniform float segmentStart;
+    uniform float carIndex;
+    uniform float carPositionY;
     uniform sampler2D carTexture;
 
     varying vec2 facePosition;
 
     void main() {
-      gl_FragColor = texture2D(carTexture, facePosition * vec2(0.5, -0.5) - vec2(0.5, 0.5));
+      float lightDistance = abs(mod((carPositionY - segmentStart + lightOffset) / lightSpacing, 1.0) - 0.5) * 2.0;
+
+      gl_FragColor = texture2D(carTexture, facePosition * vec2(0.125, -0.5) + vec2((carIndex + 0.5) * 0.25, 0.5));
+      gl_FragColor.rgb *= 0.8 + max(0.0, 2.0 * lightDistance * lightDistance - 0.2);
 
       if (gl_FragColor.a < 1.0) {
         discard;
@@ -317,6 +334,9 @@ carCmd = regl({
 
   uniforms: {
     carTexture: carTexture,
+    carIndex: regl.prop('carIndex'),
+    carLane: regl.prop('carLane'),
+    carPositionY: regl.prop('carPositionY'),
     camera: regl.prop('camera')
   },
 
@@ -563,13 +583,13 @@ const camera = mat4.create();
 
 const STEP = 1 / 60.0;
 
-const CAMERA_HEIGHT = 2.25;
+const CAMERA_HEIGHT = 3.25;
 const DRAW_DISTANCE = 800;
 
-const speed = 200 / 3.6; // km/h to m/s
+const speed = 300 / 3.6; // km/h to m/s
 
 const aspect = canvas.width / canvas.height;
-const fovX = 1.0;
+const fovX = 0.6;
 const fovY = 2.0 * Math.atan(Math.tan(fovX * 0.5) / aspect);
 
 const bgTopColor = vec3.fromValues(...onecolor('#005555').toJSON().slice(1));
@@ -677,6 +697,13 @@ function runTimer(physicsStepDuration, initialRun, onTick, onFrame) {
   update();
 }
 
+const carList = [
+  { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 },
+  { x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 },
+  { x: 0, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 2 },
+  { x: 0, y: 3 }, { x: 1, y: 3 }, { x: 2, y: 3 },
+];
+
 runTimer(STEP, 0, function () {
   segmentList.forEach((segment) => {
     segment.end -= speed * STEP;
@@ -716,8 +743,21 @@ runTimer(STEP, 0, function () {
     bottomColor: bgBottomColor,
   });
 
-  carCmd({
-    camera: camera
+  segmentRenderer(segmentList, function (segmentOffset, segmentLength) {
+    carList.forEach((item, itemIndex) => {
+      const carPositionY = item.y * 30 + 18;
+
+      if (carPositionY <= segmentOffset || carPositionY > segmentOffset + segmentLength) {
+        return;
+      }
+
+      carCmd({
+        carIndex: itemIndex,
+        carLane: item.x,
+        carPositionY: carPositionY,
+        camera: camera
+      });
+    });
   });
 
   segmentRenderer(segmentList, function () {

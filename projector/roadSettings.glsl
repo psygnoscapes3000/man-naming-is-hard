@@ -15,7 +15,7 @@
 
 // fence spacing should fit evenly within light spacing
 #define fenceSpacing 12.5
-#define fenceHeight 2.5
+#define fenceHeight 3.5
 #define fenceXOffset 9.5
 
 #define buildingSpacing 25
