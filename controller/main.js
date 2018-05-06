@@ -163,14 +163,19 @@ window.onload = () => {
     const serverSeconds = serverTime / 1000;
     const ratio = 1 - serverSeconds % ROUND_SECONDS / ROUND_SECONDS;
 
+    const donutR = MAX_HEIGHT / 15;
+    const donutThickness = donutR - MAX_HEIGHT / 17;
+    const donutX = GUTTER + donutR;
+    const donutY = MAX_HEIGHT - GUTTER - donutR;
+
     ctx.fillStyle = `hsl(${120 * ratio}, 100%, 50%)`;
     ctx.beginPath();
-    ctx.moveTo(surface.width / 2, MAX_HEIGHT / 2);
-    ctx.arc(surface.width / 2, MAX_HEIGHT / 2, MAX_HEIGHT / 8, 0, Math.PI * 2 * ratio);
+    ctx.moveTo(donutX, donutY);
+    ctx.arc(donutX, donutY, donutR, 0, Math.PI * 2 * ratio);
     ctx.fill();
     ctx.fillStyle = '#333';
     ctx.beginPath();
-    ctx.arc(surface.width / 2, MAX_HEIGHT / 2, MAX_HEIGHT / 10, 0, Math.PI * 2);
+    ctx.arc(donutX, donutY, donutR - donutThickness, 0, Math.PI * 2);
     ctx.fill();
 
     buttons.forEach((button) => {
