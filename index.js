@@ -115,6 +115,12 @@ function tick() {
         case 'right':
           movePlayer(player, 1, 0);
           break;
+        case 'up':
+          movePlayer(player, 0, 1);
+          break;
+        case 'down':
+          movePlayer(player, 0, -1);
+          break;
         }
       }
     });
