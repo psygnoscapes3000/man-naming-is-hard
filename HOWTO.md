@@ -1,11 +1,12 @@
 # Instructions
 
-## Join game:
+
+## Join Game - tactix.ngrok.io
 
 - visit **tactix.ngrok.io** in your phone
 - note your car colour once you join
 
-## How to play:
+## How to Play
 
 - MIDNIGHT TACTIX 3000 is a **turn-based racing game**
 - all cars move once every turn (left, right, up, down)
