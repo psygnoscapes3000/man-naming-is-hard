@@ -612,14 +612,25 @@ io.on('connect', () => {
 });
 
 function updateState(state) {
-  carList.splice(state.players.length);
-  state.players.forEach((player, playerIndex) => {
-    const car = carList[playerIndex] = carList[playerIndex] || {
-      nextPos: vec2.fromValues(0, 0),
-      pos: null
-    };
+  const goners = carList.filter(car => !state.players.some(player => player.car === car.id));
 
-    car.car = player.car;
+  goners.forEach(car => {
+    const index = carList.indexOf(car);
+    carList.splice(index, 1);
+  });
+
+  state.players.forEach((player, playerIndex) => {
+    const carIndex = carList.findIndex(car => car.id === player.car);
+
+    if (carIndex === -1) {
+      carList.push({
+        id: player.car,
+        nextPos: vec2.fromValues(0, 0),
+        pos: vec2.fromValues(0, 0)
+      });
+    }
+
+    const car = carIndex !== -1 ? carList[carIndex] : carList[carList.length - 1];
 
     vec2.set(
       car.nextPos,
@@ -627,8 +638,7 @@ function updateState(state) {
       player.row * 30 + 18
     );
 
-    if (car.pos === null) {
-      car.pos = vec2.create();
+    if (carIndex === -1) {
       vec2.copy(car.pos, car.nextPos);
     }
   });
@@ -792,7 +802,7 @@ runTimer(STEP, 0, function () {
       }
 
       carCmd({
-        carIndex: CARS.indexOf(car.car),
+        carIndex: CARS.indexOf(car.id),
         carPositionX: car.pos[0],
         carPositionY: car.pos[1],
         camera: camera
