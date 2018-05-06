@@ -683,8 +683,8 @@ setInterval(() => {
   const ROUND_SECONDS = 3;
   const serverTime = Date.now() - serverTimeDelta;
   const serverSeconds = serverTime / 1000;
-  const counter = Math.floor((serverSeconds - 1 - 0.25) % ROUND_SECONDS);
-  const ratio = ((ROUND_SECONDS * 2 - 1 - 2 * counter)) / (ROUND_SECONDS * 2 - 1);
+  const counter = (serverSeconds) % ROUND_SECONDS;
+  const ratio = ((ROUND_SECONDS - counter)) / (ROUND_SECONDS);
 
   turnTimerBody.style.width = `${ratio * 100}%`;
   turnTimerBody.style.background = counter === ROUND_SECONDS - 1 ? '#fff' : '#aaa';
