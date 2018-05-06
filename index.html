@@ -9,6 +9,25 @@
 <script>
   const socket = io({ transports: [ 'websocket' ], upgrade: false });
 
+  const CARS = {
+    FURY: {
+      name: 'Fury',
+      color: '#f00'
+    },
+    STING: {
+      name: 'Sting',
+      color: '#ff0'
+    },
+    STORM: {
+      name: 'Storm',
+      color: '#08f'
+    },
+    MAGIC: {
+      name: 'Magic',
+      color: '#80f'
+    }
+  };
+
   let state = {};
 
   socket.on('connect', () => {
@@ -26,6 +45,11 @@
   socket.on('action_ack', (action) => {
     console.log('action ack');
     state.action = action;
+  });
+
+  socket.on('car', (car) => {
+    console.log('my car is', car);
+    state.car = car;
   });
 
   socket.on('turn', () => {
@@ -72,6 +96,7 @@
     const BUTTON_HEIGHT = 42;
     const BUTTON_SPACING = 10;
     const ACTIVE_BUTTON_OFFSET = BUTTON_WIDTH + 5;
+    const NAME_SIZE = 32;
 
     const buttons = [];
 
@@ -114,7 +139,7 @@
       ctx.fillStyle = '#333333';
       ctx.fillRect(0, 0, surface.width, MAX_HEIGHT);
 
-      const ROUND_SECONDS = 5;
+      const ROUND_SECONDS = 3;
 
       if (serverTimeDelta === null) {
         serverTimeDelta = targetServerTimeDelta;
@@ -145,6 +170,15 @@
           BUTTON_WIDTH, BUTTON_HEIGHT
         );
       });
+
+      if (state.car) {
+        const car = CARS[state.car];
+
+        ctx.font = `${NAME_SIZE}px VT323, monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = car.color;
+        ctx.fillText(car.name, surface.width / 2, NAME_SIZE);
+      }
     }
 
     requestAnimationFrame(paint);
@@ -188,6 +222,7 @@ body {
 </head>
 <body>
 <canvas id="surface"></canvas>
+<div id="info"></div>
 <div id="fullscreen">Tap to enter fullscreen</div>
 </body>
 </html>
