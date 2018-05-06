@@ -14,6 +14,8 @@ body, button {
 }
 button {
   cursor: pointer;
+  border: none;
+  margin: 0;
 }
 button:focus {
   outline: none;
@@ -89,7 +91,6 @@ button:focus {
 #join {
   background: green;
   color: lime;
-  border: none;
   padding: 5vh 15vh;
   margin-top: 10vh;
   font-size: 20vh;
@@ -101,10 +102,39 @@ button:focus {
   left: 2vh;
   background: black;
   color: gray;
-  border: none;
   padding: 2vh 3vh;
   font-size: 8vh;
   text-transform: uppercase;
+}
+.action {
+  background: red;
+  color: white;
+  width: 24vh;
+  height: 24vh;
+  position: absolute;
+  text-indent: -9999px;
+  background: url(arcade-button.png) no-repeat;
+  background-size: cover;
+}
+#left {
+  top: 50%;
+  margin-top: -12vh;
+  left: 5vh;
+}
+#right {
+  top: 50%;
+  margin-top: -12vh;
+  left: 31vh;
+}
+#up {
+  top: 50%;
+  margin-top: -25vh;
+  right: 5vh;
+}
+#down {
+  top: 50%;
+  margin-top: 1vh;
+  right: 5vh;
 }
 #portrait-error {
   position: absolute;
