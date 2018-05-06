@@ -52,6 +52,11 @@
     state.car = car;
   });
 
+  socket.on('max_players_reached', () => {
+    console.error('No space on server');
+    state.error = 'No space on server';
+  });
+
   socket.on('turn', () => {
     state.action = null;
   });
