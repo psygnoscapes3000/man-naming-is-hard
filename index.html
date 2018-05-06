@@ -171,12 +171,14 @@
         );
       });
 
-      const car = CARS[state.car];
+      if (state.car) {
+        const car = CARS[state.car];
 
-      ctx.font = `${NAME_SIZE}px VT323, monospace`;
-      ctx.textAlign = 'center';
-      ctx.fillStyle = car.color;
-      ctx.fillText(car.name, surface.width / 2, NAME_SIZE);
+        ctx.font = `${NAME_SIZE}px VT323, monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = car.color;
+        ctx.fillText(car.name, surface.width / 2, NAME_SIZE);
+      }
     }
 
     requestAnimationFrame(paint);
