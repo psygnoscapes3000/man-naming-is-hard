@@ -59,10 +59,10 @@ document.body.appendChild(turnTimer);
 
 const turnTimerBody = document.createElement('div');
 turnTimerBody.style.margin = 'auto';
-turnTimerBody.style.transition = '0.25s ease-out width';
+turnTimerBody.style.transition = '0.25s ease-out width, 0.25s ease-out background';
 turnTimerBody.style.width = '100%';
 turnTimerBody.style.height = '100%';
-turnTimerBody.style.background = '#fff';
+turnTimerBody.style.background = '#888';
 turnTimerBody.style.borderBottom = '4px solid #000';
 turnTimer.appendChild(turnTimerBody);
 
@@ -687,7 +687,7 @@ setInterval(() => {
   const ratio = ((ROUND_SECONDS - counter)) / (ROUND_SECONDS);
 
   turnTimerBody.style.width = `${ratio * 100}%`;
-  turnTimerBody.style.background = counter === ROUND_SECONDS - 1 ? '#fff' : '#aaa';
+  turnTimerBody.style.background = counter < 0.25 ? '#fff' : '#888';
 }, 250);
 
 // no need for sprite distance closer than 20 because the added transition "pop" is too close and not worth the precision
