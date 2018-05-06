@@ -15,6 +15,9 @@ body, button {
 button {
   cursor: pointer;
 }
+button:focus {
+  outline: none;
+}
 #surface {
   position: absolute;
   top: 0;
@@ -34,20 +37,27 @@ button {
   text-align: center;
   font-size: 20vh;
   line-height: 20vh;
-  margin-top: 5vh;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  top: 5vh;
+  text-transform: uppercase;
 }
 #car {
   background: url(../projector/car.png) no-repeat;
   width: 50vh;
-  margin: 0 auto;
+  position: absolute;
+  left: 50%;
+  margin-left: -25vh;
+  top: 20vh;
   height: 50vh;
   background-size: cover;
+  display: none;
 }
 #car.fury { background-position-x: 0vh; }
 #car.sting { background-position-x: -50vh; }
 #car.storm { background-position-x: -100vh; }
 #car.magic { background-position-x: -150vh; }
-
 #preamble {
   position: absolute;
   top: 0;
@@ -64,14 +74,36 @@ button {
   font-size: 15vh;
   line-height: 15vh;
   font-weight: normal;
+
+  /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#36baf7+0,e5e5e5+50,b58830+51,d6d3c7+100 */
+  background: #36baf7; /* Old browsers */
+  background: -moz-linear-gradient(top, #36baf7 0%, #e5e5e5 50%, #b58830 51%, #d6d3c7 100%); /* FF3.6-15 */
+  background: -webkit-linear-gradient(top, #36baf7 0%,#e5e5e5 50%,#b58830 51%,#d6d3c7 100%); /* Chrome10-25,Safari5.1-6 */
+  background: linear-gradient(to bottom, #36baf7 0%,#e5e5e5 50%,#b58830 51%,#d6d3c7 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#36baf7', endColorstr='#d6d3c7',GradientType=0 ); /* IE6-9 */
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 #join {
   background: green;
   color: lime;
-  border: 0;
+  border: none;
   padding: 5vh 15vh;
   margin-top: 10vh;
-  font-size: 30vh;
+  font-size: 20vh;
+  text-transform: uppercase;
+}
+#quit {
+  position: absolute;
+  top: 2vh;
+  left: 2vh;
+  background: black;
+  color: gray;
+  border: none;
+  padding: 2vh 3vh;
+  font-size: 8vh;
   text-transform: uppercase;
 }
 #portrait-error {
