@@ -31,7 +31,7 @@ const ROWS = 4;
 const COLS = 3;
 
 function isOccupied(col, row) {
-  return players.some((player) => player.row === row && player.col === col);
+  return players.find((player) => player.row === row && player.col === col);
 }
 
 function isCarTaken(car) {
@@ -46,8 +46,15 @@ function movePlayer(player, cols, rows) {
     return false;
   }
 
-  if (isOccupied(newCol, newRow)) {
-    return false;
+  const other = isOccupied(newCol, newRow);
+  if (other) {
+    if (rows > 0) {
+      other.col = player.col;
+      other.row = player.row;
+      other.action = null; // prevent other player from moving
+    } else {
+      return false;
+    }
   }
 
   player.col = newCol;
@@ -163,6 +170,8 @@ function tick() {
           break;
         }
       }
+
+      player.action = null;
     });
 
     io.emit('turn', {
@@ -173,7 +182,6 @@ function tick() {
     });
 
     players.forEach((player) => {
-      player.action = null;
       player.state = 'PLAYING';
     });
   }
