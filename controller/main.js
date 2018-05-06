@@ -29,7 +29,6 @@ function connect() {
   socket = io({ transports: [ 'websocket' ], upgrade: false });
 
   socket.on('connect', () => {
-    console.log('connected');
     socket.emit('identify', { isPlayer: true });
   });
 
@@ -37,57 +36,36 @@ function connect() {
     targetServerTimeDelta = Date.now() - time;
   });
 
-  socket.on('car', (car) => {
-    const carInfo = CARS[car];
+  socket.on('join', (player) => {
+    document.getElementById('game').style.display = 'block';
+    document.getElementById('game-full').style.display = 'none';
+
+    const carInfo = CARS[player.car];
 
     const name = document.getElementById('name');
     name.style.color = carInfo.highlightColor;
     name.innerHTML = carInfo.name;
-
-    document.getElementById('car').style.display = 'block';
-    document.getElementById('car').className = car.toLowerCase();
+    document.getElementById('car').className = player.car.toLowerCase();
   });
 
   socket.on('max_players_reached', () => {
-    document.getElementById('car').style.display = 'none';
-
-    const name = document.getElementById('name');
-    name.style.color = '#666';
-    name.innerHTML = 'Game full';
+    document.getElementById('game').style.display = 'none';
+    document.getElementById('game-full').style.display = 'block';
   });
 }
 
 function disconnect() {
   socket.close();
-  // @todo exit raf
 }
 
 function emitAction(action) {
-  console.log('action', action);
   socket.emit('action', action);
 }
 
 window.onload = () => {
   const preamble = document.getElementById('preamble');
-  const join = document.getElementById('join');
-  const quit = document.getElementById('quit');
-  const surface = document.getElementById('surface');
-  const ctx = surface.getContext('2d');
 
-  const MAX_HEIGHT = 160;
-
-  function resize() {
-    surface.width = MAX_HEIGHT / surface.clientHeight * surface.clientWidth;
-    surface.height = MAX_HEIGHT;
-
-    ctx.imageSmoothingEnabled = false;
-  }
-
-  window.addEventListener('resize', resize);
-
-  resize();
-
-  join.addEventListener('click', () => {
+  function join() {
     preamble.style.display = 'none';
 
     if (screenfull.enabled) {
@@ -95,9 +73,9 @@ window.onload = () => {
     }
 
     connect();
-  });
+  }
 
-  quit.addEventListener('click', () => {
+  function quit() {
     preamble.style.display = 'block';
 
     if (screenfull.enabled) {
@@ -105,9 +83,13 @@ window.onload = () => {
     }
 
     disconnect();
-  });
+  }
 
-  // const hammertime = new Hammer(surface, {});
+  document.getElementById('join').addEventListener('click', join);
+  document.getElementById('back').addEventListener('click', quit);
+  document.getElementById('quit').addEventListener('click', quit);
+
+  // const hammertime = new Hammer(roundTimer, {});
 
   // hammertime.on('tap', (evt) => {
   // });
@@ -119,11 +101,18 @@ window.onload = () => {
     });
   });
 
+  const roundTimer = document.getElementById('round-timer');
+
+  roundTimer.width = roundTimer.clientWidth / 5;
+  roundTimer.height = roundTimer.clientHeight / 5;
+  const ctx = roundTimer.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
   function paint() {
     requestAnimationFrame(paint);
 
     ctx.fillStyle = '#333';
-    ctx.fillRect(0, 0, surface.width, MAX_HEIGHT);
+    ctx.fillRect(0, 0, roundTimer.width, roundTimer.height);
 
     const ROUND_SECONDS = 3;
 
@@ -137,11 +126,10 @@ window.onload = () => {
     const serverSeconds = serverTime / 1000;
     const ratio = 1 - serverSeconds % ROUND_SECONDS / ROUND_SECONDS;
 
-    const GUTTER = 8;
-    const DONUT_R = MAX_HEIGHT / 15;
-    const DONUT_THICKNESS = DONUT_R - MAX_HEIGHT / 17;
-    const DONUT_X = GUTTER + DONUT_R;
-    const DONUT_Y = MAX_HEIGHT - GUTTER - DONUT_R;
+    const DONUT_R = roundTimer.width / 2;
+    const DONUT_THICKNESS = DONUT_R - roundTimer.width / 3;
+    const DONUT_X = DONUT_R;
+    const DONUT_Y = DONUT_R;
 
     ctx.fillStyle = `hsl(${120 * ratio}, 100%, 50%)`;
     ctx.beginPath();

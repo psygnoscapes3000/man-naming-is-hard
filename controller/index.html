@@ -12,16 +12,20 @@
   <script src="main.js"></script>
 </head>
 <body>
-  <canvas id="surface"></canvas>
-  <div id="overlay">
+    <div id="game-full">
+      <div id="game-full-message">Game full</div>
+      <button id="back" type="button">Back</button>
+    </div>
+    <div id="game">
     <div id="name"></div>
     <div id="car"></div>
+    <button id="quit" type="button">Quit</button>
+    <button id="left" type="button" class="action">Left</button>
+    <button id="right" type="button" class="action">Right</button>
+    <button id="up" type="button" class="action">Up</button>
+    <button id="down" type="button" class="action">Down</button>
+    <canvas id="round-timer"></canvas>
   </div>
-  <button id="quit" type="button">Quit</button>
-  <button id="left" type="button" class="action">Left</button>
-  <button id="right" type="button" class="action">Right</button>
-  <button id="up" type="button" class="action">Up</button>
-  <button id="down" type="button" class="action">Down</button>
   <div id="preamble">
     <h1 id="title">Midnight Tactix 3000</h1>
     <button id="join">Join</button>
