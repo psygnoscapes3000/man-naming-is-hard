@@ -55,6 +55,8 @@ function connect() {
     const name = document.getElementById('name');
     name.style.color = carInfo.highlightColor;
     name.innerHTML = carInfo.name;
+
+    document.getElementById('car').className = car.toLowerCase();
   });
 
   socket.on('max_players_reached', () => {
