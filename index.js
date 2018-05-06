@@ -92,9 +92,15 @@ io.on('connection', (socket) => {
   });
 });
 
-const npc = new Player();
-placePlayer(npc);
-players.push(npc);
+npcList = [];
+
+Array(...new Array(2)).forEach(() => {
+  const npc = new Player();
+  placePlayer(npc);
+  players.push(npc);
+
+  npcList.push(npc);
+});
 
 function tick() {
   const time = Date.now();
@@ -110,7 +116,9 @@ function tick() {
 
     // randomize NPC movement
     const npcActions = [ 'left', 'right', 'up', 'down' ];
-    npc.action = npcActions[Math.floor(Math.random() * npcActions.length)];
+    npcList.forEach(npc => {
+      npc.action = npcActions[Math.floor(Math.random() * npcActions.length)];
+    });
 
     players.forEach((player) => {
       if (player.action) {
