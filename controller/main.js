@@ -24,6 +24,7 @@ const CARS = {
 let socket = null;
 let serverTimeDelta = null;
 let targetServerTimeDelta = null;
+let prevRatio = null;
 
 function connect() {
   socket = io({ transports: [ 'websocket' ], upgrade: false });
@@ -125,6 +126,13 @@ window.onload = () => {
     const serverTime = Date.now() - serverTimeDelta;
     const serverSeconds = serverTime / 1000;
     const ratio = 1 - serverSeconds % ROUND_SECONDS / ROUND_SECONDS;
+
+    if (prevRatio !== null) {
+      if (ratio > prevRatio && window.navigator.vibrate) {
+        window.navigator.vibrate(50);
+      }
+    }
+    prevRatio = ratio;
 
     const DONUT_R = roundTimer.width / 2;
     const DONUT_THICKNESS = DONUT_R - roundTimer.width / 3;
