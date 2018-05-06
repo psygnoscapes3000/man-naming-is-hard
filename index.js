@@ -78,6 +78,32 @@ function assignCar(player) {
   return !isCarTaken(player.car);
 }
 
+const npcList = [];
+
+function addNpc() {
+  const npc = new Player();
+
+  while (!placePlayer(npc));
+  while (!assignCar(npc));
+
+  players.push(npc);
+
+  npcList.push(npc);
+}
+
+function removeNpc() {
+  if (!npcList.length) {
+    return;
+  }
+
+  const npc = npcList.shift();
+
+  players = players.filter((p) => p !== npc);
+}
+
+addNpc();
+addNpc();
+
 io.on('connection', (socket) => {
   console.log('connected');
 
@@ -100,10 +126,18 @@ io.on('connection', (socket) => {
 
       console.log('players', players.length);
 
+      if (players.length > CARS.length - 1) {
+        removeNpc();
+      }
+
       socket.on('disconnect', () => {
         console.log('player disconnected');
         players = players.filter((p) => p !== player);
         console.log('players', players.length);
+
+        if (players.length < CARS.length - 1 && npcList.length < 2) {
+          addNpc();
+        }
       });
 
       socket.on('action', (action) => {
@@ -120,19 +154,6 @@ io.on('connection', (socket) => {
       });
     }
   });
-});
-
-npcList = [];
-
-Array(...new Array(2)).forEach(() => {
-  const npc = new Player();
-
-  while (!placePlayer(npc));
-  while (!assignCar(npc));
-
-  players.push(npc);
-
-  npcList.push(npc);
 });
 
 function tick() {
