@@ -103,13 +103,13 @@ window.onload = () => {
 
   const roundTimer = document.getElementById('round-timer');
 
-  roundTimer.width = roundTimer.clientWidth / 5;
-  roundTimer.height = roundTimer.clientHeight / 5;
-  const ctx = roundTimer.getContext('2d');
-  ctx.imageSmoothingEnabled = false;
-
   function paint() {
     requestAnimationFrame(paint);
+
+    roundTimer.width = roundTimer.clientWidth / 5;
+    roundTimer.height = roundTimer.clientHeight / 5;
+    const ctx = roundTimer.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
 
     ctx.fillStyle = '#333';
     ctx.fillRect(0, 0, roundTimer.width, roundTimer.height);
