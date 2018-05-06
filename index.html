@@ -12,19 +12,23 @@
   const CARS = {
     FURY: {
       name: 'Fury',
-      color: '#f00'
+      color: '#ee0022',
+      highlightColor: '#ee4444'
     },
     STING: {
       name: 'Sting',
-      color: '#ff0'
+      color: '#eecc00',
+      highlightColor: '#eeee44'
     },
     STORM: {
       name: 'Storm',
-      color: '#08f'
+      color: '#00eecc',
+      highlightColor: '#44eeee'
     },
     MAGIC: {
       name: 'Magic',
-      color: '#80f'
+      color: '#6600ee',
+      highlightColor: '#9944ee'
     }
   };
 
@@ -181,7 +185,7 @@
 
         ctx.font = `${NAME_SIZE}px VT323, monospace`;
         ctx.textAlign = 'center';
-        ctx.fillStyle = car.color;
+        ctx.fillStyle = car.highlightColor;
         ctx.fillText(car.name, surface.width / 2, NAME_SIZE);
       }
     }
