@@ -604,8 +604,9 @@ const DRAW_DISTANCE = 800;
 const speed = 300 / 3.6; // km/h to m/s
 
 const aspect = canvas.width / canvas.height;
-const fovX = 0.6;
-const fovY = 2.0 * Math.atan(Math.tan(fovX * 0.5) / aspect);
+// const fovX = 0.6;
+// const fovY = 2.0 * Math.atan(Math.tan(fovX * 0.5) / aspect);
+const fovY = 0.4;
 
 const bgTopColor = vec3.fromValues(...onecolor('#005555').toJSON().slice(1));
 const bgBottomColor = vec3.fromValues(...onecolor('#ff2222').toJSON().slice(1));
