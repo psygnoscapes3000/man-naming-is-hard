@@ -74,6 +74,7 @@ io.on('connection', (socket) => {
     if (identity.isPlayer) {
       if (!(players.length < CARS.length)) {
         console.log('max players');
+        socket.emit('max_players_reached');
         return;
       }
 
