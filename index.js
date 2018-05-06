@@ -12,8 +12,7 @@ app.use('/', express.static('.'));
 let players = [];
 
 class Player {
-  constructor(socket) {
-    this.socket = socket;
+  constructor() {
     this.state = 'NEW';
     this.action = null;
     this.row = null;
@@ -64,7 +63,7 @@ io.on('connection', (socket) => {
         return;
       }
 
-      const player = new Player(socket);
+      const player = new Player();
 
       while (!placePlayer(player));
 
@@ -74,7 +73,7 @@ io.on('connection', (socket) => {
 
       socket.on('disconnect', () => {
         console.log('player disconnected');
-        players = players.filter((player) => player.socket !== socket);
+        players = players.filter((p) => p !== player);
         console.log('players', players.length);
       });
 
@@ -88,12 +87,21 @@ io.on('connection', (socket) => {
 
       socket.emit('init', {
         players: players.map((player) => ({
-          ...player,
-          socket: undefined
+          ...player
         }))
       });
     }
   });
+});
+
+npcList = [];
+
+Array(...new Array(2)).forEach(() => {
+  const npc = new Player();
+  placePlayer(npc);
+  players.push(npc);
+
+  npcList.push(npc);
 });
 
 function tick() {
@@ -103,10 +111,16 @@ function tick() {
 
   const seconds = Math.floor(time / 1000);
 
-  const ROUND_SECONDS = 5;
+  const ROUND_SECONDS = 3;
 
   if (seconds % ROUND_SECONDS === 0) {
     console.log('new turn');
+
+    // randomize NPC movement
+    const npcActions = [ 'left', 'right', 'up', 'down' ];
+    npcList.forEach(npc => {
+      npc.action = npcActions[Math.floor(Math.random() * npcActions.length)];
+    });
 
     players.forEach((player) => {
       if (player.action) {
