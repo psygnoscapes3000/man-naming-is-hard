@@ -7,14 +7,18 @@ const mat4 = require('gl-matrix').mat4;
 const glsl = require('glslify');
 const io = require('socket.io-client')('http://localhost:8013');
 
-let state = {};
+let state = { players: [] };
 
 io.on('connect', () => {
   io.emit('identify', {});
 });
 
-io.on('turn', (turn) => {
-  console.log('turn', turn);
+io.on('init', (newState) => {
+  state = newState;
+});
+
+io.on('turn', (newState) => {
+  state = newState;
 });
 
 const parseGLSLConstants = require('./parseGLSLConstants');
@@ -708,13 +712,6 @@ function runTimer(physicsStepDuration, initialRun, onTick, onFrame) {
   update();
 }
 
-const carList = [
-  { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 },
-  { x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 },
-  { x: 0, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 2 },
-  { x: 0, y: 3 }, { x: 1, y: 3 }, { x: 2, y: 3 },
-];
-
 runTimer(STEP, 0, function () {
   segmentList.forEach((segment) => {
     segment.end -= speed * STEP;
@@ -755,16 +752,16 @@ runTimer(STEP, 0, function () {
   });
 
   segmentRenderer(segmentList, function (segmentOffset, segmentLength) {
-    carList.forEach((item, itemIndex) => {
-      const carPositionY = item.y * 30 + 18;
+    state.players.forEach((player, playerIndex) => {
+      const carPositionY = player.row * 30 + 18;
 
       if (carPositionY <= segmentOffset || carPositionY > segmentOffset + segmentLength) {
         return;
       }
 
       carCmd({
-        carIndex: itemIndex,
-        carLane: item.x,
+        carIndex: playerIndex,
+        carLane: player.col,
         carPositionY: carPositionY,
         camera: camera
       });
