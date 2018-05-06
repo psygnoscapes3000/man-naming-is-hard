@@ -21,11 +21,7 @@ const CARS = {
   }
 };
 
-const arcadeButtons = new Image();
-arcadeButtons.src = 'arcade-buttons.png';
-
 let socket = null;
-let state = {};
 let serverTimeDelta = null;
 let targetServerTimeDelta = null;
 
@@ -41,16 +37,8 @@ function connect() {
     targetServerTimeDelta = Date.now() - time;
   });
 
-  socket.on('action_ack', (action) => {
-    console.log('action ack');
-    state.action = action;
-  });
-
   socket.on('car', (car) => {
-    console.log('my car is', car);
-    state.car = car;
-
-    const carInfo = CARS[state.car];
+    const carInfo = CARS[car];
 
     const name = document.getElementById('name');
     name.style.color = carInfo.highlightColor;
@@ -61,17 +49,11 @@ function connect() {
   });
 
   socket.on('max_players_reached', () => {
-    console.error('No space on server');
-    state.error = 'No space on server';
     document.getElementById('car').style.display = 'none';
 
     const name = document.getElementById('name');
     name.style.color = '#666';
     name.innerHTML = 'Game full';
-  });
-
-  socket.on('turn', () => {
-    state.action = null;
   });
 }
 
@@ -125,47 +107,15 @@ window.onload = () => {
     disconnect();
   });
 
-  const hammertime = new Hammer(surface, {});
+  // const hammertime = new Hammer(surface, {});
 
-  const GUTTER = 8;
-  const BUTTON_WIDTH = 41;
-  const BUTTON_HEIGHT = 42;
-  const BUTTON_SPACING = 10;
-  const ACTIVE_BUTTON_OFFSET = BUTTON_WIDTH + 5;
-  const NAME_SIZE = 32;
+  // hammertime.on('tap', (evt) => {
+  // });
 
-  const buttons = [];
-
-  buttons.push({
-    action: 'left',
-    x: () => GUTTER,
-    y: () => (MAX_HEIGHT - BUTTON_HEIGHT) / 2
-  });
-  buttons.push({
-    action: 'right',
-    x: () => GUTTER + BUTTON_WIDTH + BUTTON_SPACING,
-    y: () => (MAX_HEIGHT - BUTTON_HEIGHT) / 2
-  });
-  buttons.push({
-    action: 'up',
-    x: () => surface.width - GUTTER - BUTTON_WIDTH,
-    y: () => (MAX_HEIGHT - BUTTON_SPACING) / 2 - BUTTON_HEIGHT
-  });
-  buttons.push({
-    action: 'down',
-    x: () => surface.width - GUTTER - BUTTON_WIDTH,
-    y: () => (MAX_HEIGHT + BUTTON_SPACING) / 2
-  });
-
-  hammertime.on('tap', (evt) => {
-    const normX = evt.center.x / surface.clientHeight * MAX_HEIGHT;
-    const normY = evt.center.y / surface.clientHeight * MAX_HEIGHT;
-
-    buttons.some((button) => {
-      if (normX >= button.x() && normX < button.x() + BUTTON_WIDTH && normY >= button.y() && normY < button.y() + BUTTON_HEIGHT) {
-        emitAction(button.action);
-        return true;
-      }
+  [ 'left', 'right', 'up', 'down' ].forEach((action) => {
+    const button = document.getElementById(action);
+    button.addEventListener('click', () => {
+      emitAction(action);
     });
   });
 
@@ -187,30 +137,21 @@ window.onload = () => {
     const serverSeconds = serverTime / 1000;
     const ratio = 1 - serverSeconds % ROUND_SECONDS / ROUND_SECONDS;
 
-    const donutR = MAX_HEIGHT / 15;
-    const donutThickness = donutR - MAX_HEIGHT / 17;
-    const donutX = GUTTER + donutR;
-    const donutY = MAX_HEIGHT - GUTTER - donutR;
+    const GUTTER = 8;
+    const DONUT_R = MAX_HEIGHT / 15;
+    const DONUT_THICKNESS = DONUT_R - MAX_HEIGHT / 17;
+    const DONUT_X = GUTTER + DONUT_R;
+    const DONUT_Y = MAX_HEIGHT - GUTTER - DONUT_R;
 
     ctx.fillStyle = `hsl(${120 * ratio}, 100%, 50%)`;
     ctx.beginPath();
-    ctx.moveTo(donutX, donutY);
-    ctx.arc(donutX, donutY, donutR, 0, Math.PI * 2 * ratio);
+    ctx.moveTo(DONUT_X, DONUT_Y);
+    ctx.arc(DONUT_X, DONUT_Y, DONUT_R, 0, Math.PI * 2 * ratio);
     ctx.fill();
     ctx.fillStyle = '#333';
     ctx.beginPath();
-    ctx.arc(donutX, donutY, donutR - donutThickness, 0, Math.PI * 2);
+    ctx.arc(DONUT_X, DONUT_Y, DONUT_R - DONUT_THICKNESS, 0, Math.PI * 2);
     ctx.fill();
-
-    buttons.forEach((button) => {
-      ctx.drawImage(
-        arcadeButtons,
-        button.action === state.action ? ACTIVE_BUTTON_OFFSET : 0, 0,
-        BUTTON_WIDTH, BUTTON_HEIGHT,
-        button.x(), button.y(),
-        BUTTON_WIDTH, BUTTON_HEIGHT
-      );
-    });
   }
 
   requestAnimationFrame(paint);
