@@ -27,6 +27,7 @@ let targetServerTimeDelta = null;
 let roundRatio = null;
 let prevRoundRatio = null;
 let isPlaying = false;
+let activeAction = null;
 
 function connect() {
   socket = io({ transports: [ 'websocket' ], upgrade: false });
@@ -99,16 +100,30 @@ window.onload = () => {
   document.getElementById('back').addEventListener('click', quit);
   document.getElementById('quit').addEventListener('click', quit);
 
-  // const hammertime = new Hammer(game, {});
+  const game = document.getElementById('game');
 
-  // hammertime.on('tap', (evt) => {
-  // });
+  const VALID_ACTIONS = { left: true, right: true, up: true, down: true };
 
-  [ 'left', 'right', 'up', 'down' ].forEach((action) => {
-    const button = document.getElementById(action);
-    button.addEventListener('click', () => {
-      emitAction(action);
-    });
+  game.addEventListener('touchstart', (evt) => {
+    const touch = evt.changedTouches[0];
+    const action = touch.target.id;
+
+    if (!VALID_ACTIONS[action]) {
+      return;
+    }
+
+    activeAction = action;
+  });
+
+  game.addEventListener('touchend', (evt) => {
+    const touch = evt.changedTouches[0];
+    const action = touch.target.id;
+
+    if (!VALID_ACTIONS[action]) {
+      return;
+    }
+
+    activeAction = null;
   });
 
   const ROUND_SECONDS = 3;
@@ -126,8 +141,14 @@ window.onload = () => {
 
     if (prevRoundRatio !== null) {
       if (roundRatio > prevRoundRatio) {
-        if (isPlaying && window.navigator.vibrate) {
-          window.navigator.vibrate(50);
+        if (isPlaying) {
+          if (activeAction) {
+            emitAction(activeAction);
+
+            if (window.navigator.vibrate) {
+              window.navigator.vibrate(50);
+            }
+          }
         }
       }
     }
