@@ -7,7 +7,7 @@ io.set('transports', [ 'websocket' ]);
 
 server.listen(8013);
 
-app.use('/', express.static('.'));
+app.use('/', express.static(__dirname + '/controller'));
 
 const CARS = [ 'FURY', 'STING', 'STORM', 'MAGIC' ];
 
