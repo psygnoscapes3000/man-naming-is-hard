@@ -99,7 +99,7 @@ window.onload = () => {
   document.getElementById('back').addEventListener('click', quit);
   document.getElementById('quit').addEventListener('click', quit);
 
-  // const hammertime = new Hammer(roundTimer, {});
+  // const hammertime = new Hammer(game, {});
 
   // hammertime.on('tap', (evt) => {
   // });
