@@ -109,7 +109,7 @@ function tick() {
 
   const seconds = Math.floor(time / 1000);
 
-  const ROUND_SECONDS = 2;
+  const ROUND_SECONDS = 3;
 
   if (seconds % ROUND_SECONDS === 0) {
     console.log('new turn');

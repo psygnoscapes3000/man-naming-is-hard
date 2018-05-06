@@ -739,7 +739,7 @@ const carTmp2 = vec2.create();
 runTimer(STEP, 0, function () {
   carList.forEach(car => {
     vec2.sub(carTmp2, car.nextPos, car.pos);
-    vec2.scale(carTmp2, carTmp2, 0.02);
+    vec2.scale(carTmp2, carTmp2, 0.01);
     vec2.add(car.pos, car.pos, carTmp2);
   });
 
