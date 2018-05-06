@@ -768,7 +768,7 @@ buildingFaceCmd = regl({
       uniform float hFlip;
 
       vec4 batchItemColor(vec2 facePosition) {
-        return texture2D(buildingFaceTexture, mod(facePosition * vec2(hFlip * 0.5, -2.0) + vec2(0.5, -2.0), vec2(1.0, 1.0)));
+        return texture2D(buildingFaceTexture, mod(facePosition * vec2(hFlip * 1.0, -2.0) + vec2(1.0, -2.0), vec2(1.0, 1.0)));
       }
     ` }
   },
