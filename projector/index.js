@@ -5,6 +5,17 @@ const vec3 = require('gl-matrix').vec3;
 const vec4 = require('gl-matrix').vec4;
 const mat4 = require('gl-matrix').mat4;
 const glsl = require('glslify');
+const io = require('socket.io-client')('http://localhost:8013');
+
+let state = {};
+
+io.on('connect', () => {
+  io.emit('identify', {});
+});
+
+io.on('turn', (turn) => {
+  console.log('turn', turn);
+});
 
 const parseGLSLConstants = require('./parseGLSLConstants');
 const { createSegmentRenderer } = require('./segment');
