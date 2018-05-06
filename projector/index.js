@@ -441,13 +441,14 @@ function createSpriteTexture(sourcePromise, textureW, textureH, textureMultiplie
   return spriteTexture;
 }
 
-function createFenceCommand(spriteTexture, levelCount, closeupDistance, cameraHeight, fenceHeight, fenceXOffset, fenceSpacing) {
+function createFenceCommand(spriteTexture, levelCount, closeupDistance, cameraHeight, fenceHeight, fenceXOffset, fenceSpacing, fenceGap) {
   return regl({ context: { batchItem: { vert: glsl`
     #pragma glslify: computeSegmentX = require('./segment', computeSegmentDX=computeSegmentDX)
 
     #define fenceHeight float(${fenceHeight})
     #define fenceXOffset float(${fenceXOffset})
     #define fenceSpacing float(${fenceSpacing})
+    #define fenceGap float(${fenceGap + ''})
     #define closeupDistance float(${closeupDistance})
     #define cameraHeight float(${cameraHeight})
 
@@ -473,10 +474,10 @@ function createFenceCommand(spriteTexture, levelCount, closeupDistance, cameraHe
     }
 
     vec2 batchItemSize(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
-      float xOffsetDelta = computeSegmentDX(fenceSpacing, segmentDepth, segmentCurve);
+      float xOffsetDelta = computeSegmentDX((fenceSpacing - fenceGap), segmentDepth, segmentCurve);
 
-      float visibleSideWidth = hFlip * (hFlip * fenceXOffset + xOffset - cameraSideOffset) * fenceSpacing / (depth + fenceSpacing);
-      float visibleCurvatureAdjustment = hFlip * xOffsetDelta * depth / (depth + fenceSpacing);
+      float visibleSideWidth = hFlip * (hFlip * fenceXOffset + xOffset - cameraSideOffset) * (fenceSpacing - fenceGap) / (depth + (fenceSpacing - fenceGap));
+      float visibleCurvatureAdjustment = hFlip * xOffsetDelta * depth / (depth + (fenceSpacing - fenceGap));
 
       return vec2(
         clamp(visibleSideWidth - visibleCurvatureAdjustment, 0.2, 10000.0),
@@ -671,25 +672,75 @@ const fenceTexture = createSpriteTexture(
   ROAD_SETTINGS.fenceXOffset,
   ROAD_SETTINGS.fenceHeight
 );
-const fenceCmd = createFenceCommand(fenceTexture, fenceLevels.length, (ROAD_SETTINGS.fenceSpacing - 3), CAMERA_HEIGHT, ROAD_SETTINGS.fenceHeight, ROAD_SETTINGS.fenceXOffset, ROAD_SETTINGS.fenceSpacing);
+const fenceCmd = createFenceCommand(fenceTexture, fenceLevels.length, (ROAD_SETTINGS.fenceSpacing - 3), CAMERA_HEIGHT, ROAD_SETTINGS.fenceHeight, ROAD_SETTINGS.fenceXOffset, ROAD_SETTINGS.fenceSpacing, 0);
 
 const buildingLevels = [ 20, 80, 160, 320, 1000 ];
 
 const buildingImageURI = 'data:application/octet-stream;base64,' + btoa(require('fs').readFileSync(__dirname + '/building.png', 'binary'));
 const buildingImagePromise = loadImage(buildingImageURI);
 
+const buildingFaceTexture = regl.texture({ width: 64, height: 64, min: 'nearest', mag: 'nearest' });
+buildingImagePromise.then(img => {
+  buildingFaceTexture({ width: img.width, height: img.height, min: 'nearest', mag: 'nearest', data: img });
+});
+
 const buildingTexture = createSpriteTexture(
   buildingImagePromise,
   32,
   256,
   1,
-  8,
+  4,
   buildingLevels,
-  ROAD_SETTINGS.buildingSpacing,
+  ROAD_SETTINGS.buildingSpacing - ROAD_SETTINGS.buildingGap,
   ROAD_SETTINGS.buildingXOffset,
   ROAD_SETTINGS.buildingHeight
 );
-const buildingCmd = createFenceCommand(buildingTexture, buildingLevels.length, 2, CAMERA_HEIGHT, ROAD_SETTINGS.buildingHeight, ROAD_SETTINGS.buildingXOffset, ROAD_SETTINGS.buildingSpacing);
+const buildingCmd = createFenceCommand(buildingTexture, buildingLevels.length, 2, CAMERA_HEIGHT, ROAD_SETTINGS.buildingHeight, ROAD_SETTINGS.buildingXOffset, ROAD_SETTINGS.buildingSpacing, ROAD_SETTINGS.buildingGap);
+
+buildingFaceCmd = regl({
+  context: {
+    batchItem: { vert: glsl`
+      #pragma glslify: roadSettings = require('./roadSettings')
+      #pragma glslify: computeSegmentX = require('./segment')
+
+      uniform float hFlip;
+
+      varying float xOffset;
+
+      void batchItemSetup(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
+        xOffset = computeSegmentX(segmentDepth, segmentCurve);
+      }
+
+      vec3 batchItemCenter(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
+        return vec3(
+          xOffset + hFlip * (buildingXOffset + (buildingSpacing - buildingGap) * 0.5),
+          0,
+          buildingHeight * 0.5
+        );
+      }
+
+      vec2 batchItemSize(float segmentOffset, vec3 segmentCurve, float segmentDepth) {
+        return vec2(
+          buildingSpacing - buildingGap,
+          buildingHeight
+        ) * 0.5;
+      }
+    `, frag: glsl`
+      uniform sampler2D buildingFaceTexture;
+
+      uniform float hFlip;
+
+      vec4 batchItemColor(vec2 facePosition) {
+        return texture2D(buildingFaceTexture, mod(facePosition * vec2(hFlip * 0.5, -2.0) + vec2(0.5, -2.0), vec2(1.0, 1.0)));
+      }
+    ` }
+  },
+  uniforms: {
+    buildingFaceTexture: buildingFaceTexture,
+    hFlip: regl.prop('hFlip')
+  }
+});
+
 
 const segmentRenderer = createSegmentRenderer(regl);
 const lightSegmentItemBatchRenderer = createSegmentItemBatchRenderer(
@@ -766,7 +817,7 @@ runTimer(STEP, 0, function () {
     : 0;
 
   if (totalEnd < DRAW_DISTANCE) {
-    const length = (1 + Math.floor(Math.random() * 2)) * ROAD_SETTINGS.lightSpacing;
+    const length = (1 + Math.floor(Math.random() * 2)) * ROAD_SETTINGS.lightSpacing * 3;
 
     segmentList.push({
       length: length,
@@ -866,6 +917,18 @@ runTimer(STEP, 0, function () {
         hFlip: 1,
         level: level,
         cameraSideOffset: sideOffset
+      }, renderCommand);
+    });
+
+    buildingSegmentItemBatchRenderer(segmentList, prevDistance, levelDistance, camera, function (renderCommand) {
+      buildingFaceCmd({
+        hFlip: -1
+      }, renderCommand);
+    });
+
+    buildingSegmentItemBatchRenderer(segmentList, prevDistance, levelDistance, camera, function (renderCommand) {
+      buildingFaceCmd({
+        hFlip: 1
       }, renderCommand);
     });
   });

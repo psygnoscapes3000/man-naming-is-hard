@@ -18,9 +18,10 @@
 #define fenceHeight 3.5
 #define fenceXOffset 9.5
 
-#define buildingSpacing 25
-#define buildingHeight 30
-#define buildingXOffset 18
+#define buildingSpacing 60.0
+#define buildingGap 30.0
+#define buildingHeight 50.0
+#define buildingXOffset 20.0
 
 void roadSettings() {}
 
