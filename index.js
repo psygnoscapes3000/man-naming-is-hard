@@ -15,7 +15,7 @@ let players = [];
 
 class Player {
   constructor() {
-    this.state = 'NEW';
+    this.state = 'NEW'; // @todo take out if projector doesn't need this
     this.action = null;
     this.row = null;
     this.col = null;
@@ -81,6 +81,8 @@ io.on('connection', (socket) => {
 
       while (!placePlayer(player));
       while (!assignCar(player));
+
+      socket.emit('car', player.car);
 
       players.push(player);
 
