@@ -56,17 +56,28 @@ function connect() {
     name.style.color = carInfo.highlightColor;
     name.innerHTML = carInfo.name;
 
+    document.getElementById('car').style.display = 'block';
     document.getElementById('car').className = car.toLowerCase();
   });
 
   socket.on('max_players_reached', () => {
     console.error('No space on server');
     state.error = 'No space on server';
+    document.getElementById('car').style.display = 'none';
+
+    const name = document.getElementById('name');
+    name.style.color = '#666';
+    name.innerHTML = 'Game full';
   });
 
   socket.on('turn', () => {
     state.action = null;
   });
+}
+
+function disconnect() {
+  socket.close();
+  // @todo exit raf
 }
 
 function emitAction(action) {
@@ -77,6 +88,7 @@ function emitAction(action) {
 window.onload = () => {
   const preamble = document.getElementById('preamble');
   const join = document.getElementById('join');
+  const quit = document.getElementById('quit');
   const surface = document.getElementById('surface');
   const ctx = surface.getContext('2d');
 
@@ -94,13 +106,23 @@ window.onload = () => {
   resize();
 
   join.addEventListener('click', () => {
-    preamble.parentNode.removeChild(preamble);
+    preamble.style.display = 'none';
 
     if (screenfull.enabled) {
       screenfull.request();
     }
 
     connect();
+  });
+
+  quit.addEventListener('click', () => {
+    preamble.style.display = 'block';
+
+    if (screenfull.enabled) {
+      screenfull.exit();
+    }
+
+    disconnect();
   });
 
   const hammertime = new Hammer(surface, {});
