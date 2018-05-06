@@ -81,7 +81,7 @@ button:focus {
   text-transform: uppercase;
 }
 #car {
-  background: url(../projector/car.png) no-repeat;
+  background: url(car.png) no-repeat;
   width: 50vh;
   position: absolute;
   left: 50%;

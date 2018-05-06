@@ -2,12 +2,16 @@ const express = require('express');
 const app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
+const browserifyMiddleware = require('browserify-middleware');
 
 io.set('transports', [ 'websocket' ]);
 
 server.listen(8013);
 
-app.use('/', express.static('.'));
+const projectorFile = __dirname + '/projector/index.js';
+app.get('/_projector/index.js', browserifyMiddleware([ { [projectorFile]: { run: true } }]));
+app.use('/_projector', express.static(__dirname + '/projector'));
+app.use('/', express.static(__dirname + '/controller'));
 
 const CARS = [ 'FURY', 'STING', 'STORM', 'MAGIC' ];
 
