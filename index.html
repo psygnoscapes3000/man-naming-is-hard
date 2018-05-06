@@ -47,16 +47,10 @@
 
     const MAX_HEIGHT = 160;
 
-    let hScale = null;
-    let aspectRatio = null;
-
     function resize() {
       surface.width = MAX_HEIGHT / surface.clientHeight * surface.clientWidth;
       surface.height = MAX_HEIGHT;
 
-      hScale = surface.height / MAX_HEIGHT;
-
-      ctx.scale(hScale, hScale);
       ctx.imageSmoothingEnabled = false;
     }
 
@@ -73,26 +67,52 @@
 
     const hammertime = new Hammer(surface, {});
 
-    hammertime.on('tap', (evt) => {
-      const normX = evt.center.x / surface.clientWidth;
-      const normY = evt.center.y / surface.clientHeight;
+    const GUTTER = 8;
+    const BUTTON_WIDTH = 41;
+    const BUTTON_HEIGHT = 42;
+    const BUTTON_SPACING = 10;
+    const ACTIVE_BUTTON_OFFSET = BUTTON_WIDTH + 5;
 
-      if (Math.abs(normY - 0.5) < 0.25 && Math.abs(normX - 0.5) > 0.25) {
-        if (normX < 0.5) {
-          emitAction('left');
-        } else {
-          emitAction('right');
+    const buttons = [];
+
+    buttons.push({
+      action: 'left',
+      x: () => GUTTER,
+      y: () => (MAX_HEIGHT - BUTTON_HEIGHT) / 2
+    });
+    buttons.push({
+      action: 'right',
+      x: () => GUTTER + BUTTON_WIDTH + BUTTON_SPACING,
+      y: () => (MAX_HEIGHT - BUTTON_HEIGHT) / 2
+    });
+    buttons.push({
+      action: 'up',
+      x: () => surface.width - GUTTER - BUTTON_WIDTH,
+      y: () => (MAX_HEIGHT - BUTTON_SPACING) / 2 - BUTTON_HEIGHT
+    });
+    buttons.push({
+      action: 'down',
+      x: () => surface.width - GUTTER - BUTTON_WIDTH,
+      y: () => (MAX_HEIGHT + BUTTON_SPACING) / 2
+    });
+
+    hammertime.on('tap', (evt) => {
+      const normX = evt.center.x / surface.clientHeight * MAX_HEIGHT;
+      const normY = evt.center.y / surface.clientHeight * MAX_HEIGHT;
+
+      buttons.some((button) => {
+        if (normX >= button.x() && normX < button.x() + BUTTON_WIDTH && normY >= button.y() && normY < button.y() + BUTTON_HEIGHT) {
+          emitAction(button.action);
+          return true;
         }
-      }
+      });
     });
 
     function paint() {
       requestAnimationFrame(paint);
 
-      const ctxWidth = surface.width / hScale;
-
       ctx.fillStyle = '#333333';
-      ctx.fillRect(0, 0, ctxWidth, MAX_HEIGHT);
+      ctx.fillRect(0, 0, surface.width, MAX_HEIGHT);
 
       const ROUND_SECONDS = 5;
 
@@ -108,49 +128,23 @@
 
       ctx.fillStyle = `hsl(${120 * ratio}, 100%, 50%)`;
       ctx.beginPath();
-      ctx.moveTo(ctxWidth / 2, MAX_HEIGHT / 2);
-      ctx.arc(ctxWidth / 2, MAX_HEIGHT / 2, MAX_HEIGHT / 6, 0, Math.PI * 2 * ratio);
+      ctx.moveTo(surface.width / 2, MAX_HEIGHT / 2);
+      ctx.arc(surface.width / 2, MAX_HEIGHT / 2, MAX_HEIGHT / 8, 0, Math.PI * 2 * ratio);
       ctx.fill();
       ctx.fillStyle = '#333333';
       ctx.beginPath();
-      ctx.arc(ctxWidth / 2, MAX_HEIGHT / 2, MAX_HEIGHT / 8, 0, Math.PI * 2);
+      ctx.arc(surface.width / 2, MAX_HEIGHT / 2, MAX_HEIGHT / 10, 0, Math.PI * 2);
       ctx.fill();
 
-      const GUTTER = 8;
-      const BUTTON_WIDTH = 41;
-      const BUTTON_HEIGHT = 42;
-      const BUTTON_SPACING = 10;
-      const ACTIVE_BUTTON_OFFSET = BUTTON_WIDTH + 5;
-
-      const leftActive = state.action === 'left';
-      const rightActive = state.action === 'right';
-      const upActive = state.action === 'up';
-      const downActive = state.action === 'down';
-
-      // Left button
-      ctx.drawImage(
-        arcadeButtons,
-        leftActive ? ACTIVE_BUTTON_OFFSET : 0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
-        GUTTER, (MAX_HEIGHT - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT
-      );
-      // Right button
-      ctx.drawImage(
-        arcadeButtons,
-        rightActive ? ACTIVE_BUTTON_OFFSET : 0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
-        GUTTER + BUTTON_WIDTH + BUTTON_SPACING, (MAX_HEIGHT - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT
-      );
-      // Up button
-      ctx.drawImage(
-        arcadeButtons,
-        upActive ? ACTIVE_BUTTON_OFFSET : 0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
-        ctxWidth - GUTTER - BUTTON_WIDTH, (MAX_HEIGHT - BUTTON_SPACING) / 2 - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT
-      );
-      // Down button
-      ctx.drawImage(
-        arcadeButtons,
-        downActive ? ACTIVE_BUTTON_OFFSET : 0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
-        ctxWidth - GUTTER - BUTTON_WIDTH, (MAX_HEIGHT + BUTTON_SPACING) / 2, BUTTON_WIDTH, BUTTON_HEIGHT
-      );
+      buttons.forEach((button) => {
+        ctx.drawImage(
+          arcadeButtons,
+          button.action === state.action ? ACTIVE_BUTTON_OFFSET : 0, 0,
+          BUTTON_WIDTH, BUTTON_HEIGHT,
+          button.x(), button.y(),
+          BUTTON_WIDTH, BUTTON_HEIGHT
+        );
+      });
     }
 
     requestAnimationFrame(paint);
