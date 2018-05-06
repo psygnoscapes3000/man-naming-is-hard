@@ -6,6 +6,7 @@ body {
   padding: 0;
   position: relative;
   overflow: hidden;
+  image-rendering: pixelated;
 }
 body, button {
   font-family: 'VT323', monospace;
@@ -34,6 +35,19 @@ button {
   line-height: 20vh;
   margin-top: 5vh;
 }
+#car {
+  pointer-events: none;
+  background: url(../projector/car.png) no-repeat;
+  width: 50vh;
+  margin: 0 auto;
+  height: 50vh;
+  background-size: cover;
+}
+#car.fury { background-position-x: 0vh; }
+#car.sting { background-position-x: -50vh; }
+#car.storm { background-position-x: -100vh; }
+#car.magic { background-position-x: -150vh; }
+
 #preamble {
   position: absolute;
   top: 0;
