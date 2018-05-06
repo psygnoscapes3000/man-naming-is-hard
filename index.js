@@ -83,7 +83,7 @@ io.on('connection', (socket) => {
       while (!placePlayer(player));
       while (!assignCar(player));
 
-      socket.emit('car', player.car);
+      socket.emit('join', { car: player.car });
 
       players.push(player);
 

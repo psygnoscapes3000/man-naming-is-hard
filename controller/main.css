@@ -7,6 +7,7 @@ body {
   position: relative;
   overflow: hidden;
   image-rendering: pixelated;
+  background: #333;
 }
 body, button {
   font-family: 'VT323', monospace;
@@ -20,20 +21,54 @@ button {
 button:focus {
   outline: none;
 }
-#surface {
+#game {
+  background: #333;
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  display: none;
 }
-#overlay {
+#game-full {
+  background: #333;
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
+  text-align: center;
+  box-sizing: border-box;
+  padding: 15vh 5vh;
+  text-transform: uppercase;
+  text-align: center;
+  display: none;
+}
+#game-full-message {
+  text-align: center;
+  color: #ddd;
+  font-size: 10vh;
+  line-height: 10vh;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  top: 5vh;
+  text-transform: uppercase;
+}
+#back {
+  background: black;
+  color: gray;
+  padding: 5vh 15vh;
+  margin-top: 10vh;
+  font-size: 16vh;
+  text-transform: uppercase;
+}
+#round-timer {
+  position: absolute;
+  left: 5vh;
+  bottom: 5vh;
+  width: 20vh;
+  height: 20vh;
 }
 #name {
   text-align: center;
@@ -54,7 +89,6 @@ button:focus {
   top: 20vh;
   height: 50vh;
   background-size: cover;
-  display: none;
 }
 #car.fury { background-position-x: 0vh; }
 #car.sting { background-position-x: -50vh; }
