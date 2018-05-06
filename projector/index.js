@@ -7,20 +7,6 @@ const mat4 = require('gl-matrix').mat4;
 const glsl = require('glslify');
 const io = require('socket.io-client')('http://localhost:8013');
 
-let state = { players: [] };
-
-io.on('connect', () => {
-  io.emit('identify', {});
-});
-
-io.on('init', (newState) => {
-  state = newState;
-});
-
-io.on('turn', (newState) => {
-  state = newState;
-});
-
 const parseGLSLConstants = require('./parseGLSLConstants');
 const { createSegmentRenderer } = require('./segment');
 const { getSegmentItemBatchDefinition, createSegmentItemBatchRenderer } = require('./segmentItemBatch');
@@ -293,7 +279,7 @@ carCmd = regl({
 
     uniform float segmentOffset;
     uniform vec3 segmentCurve;
-    uniform float carLane;
+    uniform float carPositionX;
     uniform float carPositionY;
     uniform mat4 camera;
     attribute vec2 position;
@@ -306,7 +292,7 @@ carCmd = regl({
       float xOffset = computeSegmentX(carPositionY - segmentOffset, segmentCurve);
 
       gl_Position = camera * vec4(
-        (carLane - roadLaneCount * 0.5 + 0.5) * roadLaneWidth + xOffset + position.x * 1.2,
+        carPositionX + xOffset + position.x * 1.2,
         carPositionY,
         (position.y + 0.72) * 1.2,
         1.0
@@ -350,7 +336,7 @@ carCmd = regl({
   uniforms: {
     carTexture: carTexture,
     carIndex: regl.prop('carIndex'),
-    carLane: regl.prop('carLane'),
+    carPositionX: regl.prop('carPositionX'),
     carPositionY: regl.prop('carPositionY'),
     camera: regl.prop('camera')
   },
@@ -617,6 +603,41 @@ const markerHighlightColor = vec3.fromValues(...onecolor('#ffffff').toJSON().sli
 
 const segmentList = [];
 
+const carList = [];
+
+io.on('connect', () => {
+  io.emit('identify', {});
+});
+
+function updateState(state) {
+  carList.splice(state.players.length);
+  state.players.forEach((player, playerIndex) => {
+    const car = carList[playerIndex] = carList[playerIndex] || {
+      nextPos: vec2.fromValues(0, 0),
+      pos: null
+    };
+
+    vec2.set(
+      car.nextPos,
+      (player.col - ROAD_SETTINGS.roadLaneCount * 0.5 + 0.5) * ROAD_SETTINGS.roadLaneWidth,
+      player.row * 30 + 18
+    );
+
+    if (car.pos === null) {
+      car.pos = vec2.create();
+      vec2.copy(car.pos, car.nextPos);
+    }
+  });
+}
+
+io.on('init', (newState) => {
+  updateState(newState);
+});
+
+io.on('turn', (newState) => {
+  updateState(newState);
+});
+
 // no need for sprite distance closer than 20 because the added transition "pop" is too close and not worth the precision
 const fenceTextureW = 32;
 const fenceTextureH = 32;
@@ -713,7 +734,15 @@ function runTimer(physicsStepDuration, initialRun, onTick, onFrame) {
   update();
 }
 
+const carTmp2 = vec2.create();
+
 runTimer(STEP, 0, function () {
+  carList.forEach(car => {
+    vec2.sub(carTmp2, car.nextPos, car.pos);
+    vec2.scale(carTmp2, carTmp2, 0.02);
+    vec2.add(car.pos, car.pos, carTmp2);
+  });
+
   segmentList.forEach((segment) => {
     segment.end -= speed * STEP;
   });
@@ -753,17 +782,15 @@ runTimer(STEP, 0, function () {
   });
 
   segmentRenderer(segmentList, function (segmentOffset, segmentLength) {
-    state.players.forEach((player, playerIndex) => {
-      const carPositionY = player.row * 30 + 18;
-
-      if (carPositionY <= segmentOffset || carPositionY > segmentOffset + segmentLength) {
+    carList.forEach((car, playerIndex) => {
+      if (car.pos[1] <= segmentOffset || car.pos[1] > segmentOffset + segmentLength) {
         return;
       }
 
       carCmd({
         carIndex: playerIndex,
-        carLane: player.col,
-        carPositionY: carPositionY,
+        carPositionX: car.pos[0],
+        carPositionY: car.pos[1],
         camera: camera
       });
     });
